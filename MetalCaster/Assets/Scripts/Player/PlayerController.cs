@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using HFSMFramework;
 using System;
+using System.Collections;
 
 // Made by Carson Lakefish
 // Concept recommendations by Oliver Beebe
@@ -57,17 +58,25 @@ public class PlayerController : Player.PlayerComponent
     [SerializeField] private float slideMomentumIncrease;
     [SerializeField] private float slideFloorStickSpeed;
     [SerializeField] private float minSpeedIncreaseThreshold;
+    private readonly float slideDotMin = -0.6f;
+
+    [Header("Size Change Parameters")]
+    [SerializeField] private float crouchSize;
+    [SerializeField] private float standardSize;
+    [SerializeField] private float sizeChangeTime;
 
     private bool GroundCollision { get; set; }
     private bool SlopeCollision  { get; set; }
     private Vector3 GroundNormal { get; set; }
     private Vector3 GroundPoint  { get; set; }
+
     private float HalfSize {
-        get { return rb.transform.localScale.y; }
+        get { 
+            return rb.transform.localScale.y; 
+        }
     }
 
-    private Vector3 ViewPosition
-    {
+    private Vector3 ViewPosition {
         get {
             return playerInput.IsInputting
             ? (playerCamera.CameraForward * playerInput.NormalizedInput.y + playerCamera.CameraRight * playerInput.NormalizedInput.x).normalized
@@ -75,10 +84,8 @@ public class PlayerController : Player.PlayerComponent
         }
     }
 
-    private Vector3 ViewPositionNoY
-    {
-        get
-        {
+    private Vector3 ViewPositionNoY {
+        get {
             return playerInput.IsInputting
             ? (playerCamera.CameraForwardNoY * playerInput.NormalizedInput.y + playerCamera.CameraRight * playerInput.NormalizedInput.x).normalized
             : Vector3.zero;
@@ -98,6 +105,8 @@ public class PlayerController : Player.PlayerComponent
     private JumpingState  Jumping   { get; set; }
     private SlidingState  Sliding   { get; set; }
     private SlideJumping  SlideJump { get; set; }
+
+    private Coroutine sizeChange;
 
 #if UNITY_EDITOR
     [Header("Debugging")]
@@ -138,7 +147,7 @@ public class PlayerController : Player.PlayerComponent
                                      
             // Sliding transitions   
             new(Sliding, Falling,    () => !GroundCollision),
-            new(Sliding, SlideJump,  () => Input.GetKeyDown(KeyCode.Space)),
+            new(Sliding, SlideJump,  () => Input.GetKeyDown(KeyCode.Space) || jumpBufferTime > 0),
             new(Sliding, Grounded,   () => !Input.GetKey(KeyCode.LeftControl)),
 
             // Slide jump transitions
@@ -203,7 +212,7 @@ public class PlayerController : Player.PlayerComponent
 
     private void GroundCollisions()
     {
-        float castDist = hfsm.CurrentState == Grounded ? groundCastDist : fallingCastDist;
+        float castDist = hfsm.CurrentState == Grounded && SlopeCollision ? groundCastDist : fallingCastDist;
 
         if (Physics.SphereCast(rb.transform.position, groundCastRad * HalfSize, Vector3.down, out RaycastHit interpolated, castDist, layers))
         {
@@ -218,18 +227,9 @@ public class PlayerController : Player.PlayerComponent
 
                 Vector3 vel            = new Vector3(rb.velocity.normalized.x, 0, rb.velocity.normalized.z).normalized;
                 Vector3 pos            = rb.transform.position + vel - (Vector3.up * (HalfSize - floorStickCheckOffset));
-                bool interpolateNormal = Physics.Raycast(pos, Vector3.down, /*out RaycastHit interpolateCheck,*/ interpolateNormalCheckDist, layers);
+                bool interpolateNormal = Physics.Raycast(pos, Vector3.down, interpolateNormalCheckDist, layers);
 
-                GroundPoint = nonInterpolated.point;
-                /*
-                if (interpolateNormal)
-                {
-                    float interpolateCheckAngle = Vector3.Angle(Vector3.up, interpolateCheck.normal);
-                    if (interpolateCheckAngle == 0) rb.velocity = new Vector3(rb.velocity.x, 0, rb.velocity.z);
-                }*/
-
-                Debug.DrawRay(pos, Vector3.down, Color.green, 1);
-
+                GroundPoint  = nonInterpolated.point;
                 GroundNormal = interpolateNormal ? interpolated.normal : nonInterpolated.normal;
             }
 
@@ -245,15 +245,44 @@ public class PlayerController : Player.PlayerComponent
         ResetGroundCollisions();
     }
 
-    private void ResetGroundCollisions()
+    private void ResetGroundCollisions() => SlopeCollision = GroundCollision = false;
+
+    private void ChangeSize(float startSize, float endSize)
     {
-        SlopeCollision  = false;
-        GroundCollision = false;
+        if (sizeChange != null) StopCoroutine(sizeChange);
+
+        sizeChange = StartCoroutine(ChangeSizeCoroutine(startSize, endSize));
+    }
+
+    private IEnumerator ChangeSizeCoroutine(float startSize, float endSize)
+    {
+        float sizeVelocity    = 0;
+
+        rb.transform.localScale = new Vector3(rb.transform.localScale.x, startSize, rb.transform.localScale.z);
+
+        while (Mathf.Abs(rb.transform.localScale.y - endSize) > 0.1f)
+        {
+            // Smoothly update the scale
+            float newSize = Mathf.SmoothDamp(rb.transform.localScale.y, endSize, ref sizeVelocity, sizeChangeTime);
+            rb.transform.localScale = new Vector3(rb.transform.localScale.x, newSize, rb.transform.localScale.z);
+
+            //float heightDifference = newSize - startSize;
+            //Vector3 targetPosition = new Vector3(rb.position.x, GroundPoint.y + (heightDifference * 0.5f), rb.position.z);
+
+            //rb.MovePosition(targetPosition);
+
+            yield return null;
+        }
+
+        rb.transform.localScale = new Vector3(rb.transform.localScale.x, endSize, rb.transform.localScale.z);
+        //rb.position = new Vector3(rb.position.x, GroundPoint.y + (endSize / 2), rb.position.z);
     }
 
     private class GroundedState : State<PlayerController>
     {
         public GroundedState(PlayerController context) : base(context) { }
+
+        private Vector3 stickVelocity;
 
         public override void Enter()
         {
@@ -266,8 +295,6 @@ public class PlayerController : Player.PlayerComponent
             GroundStick();
             context.Move(context.hfsm.Duration < context.groundMomentumConserveTime);
         }
-
-        private Vector3 stickVelocity;
 
         private void GroundStick()
         {
@@ -294,8 +321,7 @@ public class PlayerController : Player.PlayerComponent
 
         public override void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Space))
-            {
+            if (Input.GetKeyDown(KeyCode.Space)) {
                 context.jumpBufferTime = context.jumpBuffer;
             }
 
@@ -321,40 +347,31 @@ public class PlayerController : Player.PlayerComponent
             context.rb.velocity = new Vector3(context.rb.velocity.x, context.jumpForce, context.rb.velocity.z);
         }
 
-        public override void FixedUpdate()
-        {
-            context.Move(true);
-        }
+        public override void FixedUpdate() => context.Move(true);
     }
 
     private class SlidingState : State<PlayerController>
     {
         public SlidingState(PlayerController context) : base(context) { }
-        private Vector3 momentumVelocity;
-        private Vector3 stickVelocity;
-        private float stickVel;
+        private Vector3 momentum;
         private float increasedValue;
 
         public override void Enter()
         {
-            stickVelocity  = Vector3.zero;
-            increasedValue = 1;
-            stickVel = 0;
-
-            if (context.slideBoost)
-            {
-                Vector3 dir = (context.ViewPositionNoY * context.slideForce) + (context.gravity * Time.fixedDeltaTime * Vector3.down);
-
-                momentumVelocity    = Vector3.ProjectOnPlane(dir, context.GroundNormal);
-                context.rb.velocity = momentumVelocity;
+            if (context.slideBoost) {
+                Vector3 dir         = (context.ViewPositionNoY * context.slideForce) + (context.gravity * Time.fixedDeltaTime * Vector3.down);
+                momentum            = Vector3.ProjectOnPlane(dir, context.GroundNormal);
+                context.rb.velocity = momentum;
             }
-            else
-            {
-                momentumVelocity = new Vector3(context.rb.velocity.x, context.rb.velocity.y, context.rb.velocity.z);
+            else {
+                momentum = new Vector3(context.rb.velocity.x, Mathf.Min(-1, context.rb.velocity.y), context.rb.velocity.z);
             }
 
-            context.DesiredVelocity = new Vector2(momentumVelocity.x, momentumVelocity.z);
+            context.DesiredVelocity = new Vector2(momentum.x, momentum.z);
             context.slideBoost      = false;
+            increasedValue          = 1;
+
+            context.ChangeSize(context.standardSize, context.crouchSize);
         }
 
         public override void FixedUpdate()
@@ -366,40 +383,63 @@ public class PlayerController : Player.PlayerComponent
             {
                 // Get the gravity, angle, and current momentumDirection
                 Vector3 slopeGravity       = Vector3.ProjectOnPlane(Vector3.down * (context.gravity + increasedValue), context.GroundNormal);
-                Vector3 momentumDirection  = momentumVelocity.normalized;
+                Vector3 momentumDirection  = momentum.normalized;
                 float angle                = Vector3.Angle(Vector3.up, context.GroundNormal);
-                float newMomentumMagnitude = Mathf.Max(1, momentumVelocity.magnitude - angle);
+                float newMomentumMagnitude = Mathf.Max(1, momentum.magnitude - angle);
                 
                 // Ez
                 desiredVelocity = momentumDirection * newMomentumMagnitude + slopeGravity;
-                increasedValue  = Mathf.Abs(context.rb.velocity.magnitude) <= context.minSpeedIncreaseThreshold ? 0 : increasedValue + (context.slideMomentumIncrease * (angle / 90) * Time.fixedDeltaTime);
+
+                increasedValue  = Mathf.Abs(context.rb.velocity.magnitude) <= context.minSpeedIncreaseThreshold 
+                    ? 0 
+                    : increasedValue + (context.slideMomentumIncrease * (angle / 90) * Time.fixedDeltaTime);
             }
             else
             {
-                desiredVelocity  = Vector3.zero;
+                desiredVelocity  = Vector3.ProjectOnPlane(Vector3.down * context.gravity, context.GroundNormal);
                 increasedValue   = 1;
             }
 
             // Move towards gathered velocity
-            momentumVelocity = Vector3.MoveTowards(momentumVelocity, desiredVelocity, Time.fixedDeltaTime * context.slideAcceleration);
+            momentum = Vector3.MoveTowards(momentum, desiredVelocity, Time.fixedDeltaTime * context.slideAcceleration);
 
-            // Rotate the momentum based off of a speed value, preserve the gravity on the Y axis
-            if (context.ViewPosition != Vector3.zero)
+            if (context.ViewPositionNoY != Vector3.zero)
             {
-                Quaternion rotation = Quaternion.FromToRotation(momentumVelocity, context.ViewPosition);
-                Quaternion interpolated = Quaternion.Slerp(Quaternion.identity, rotation, Time.fixedDeltaTime * context.slideRotationSpeed);
-                float tempY = momentumVelocity.y;
-                momentumVelocity = interpolated * momentumVelocity;
-                momentumVelocity.y = tempY;
+                Vector3 desiredDirection = Vector3.ProjectOnPlane(context.ViewPositionNoY, context.GroundNormal).normalized;
+                Vector3 slopeDirection   = Vector3.ProjectOnPlane(Vector3.down, context.GroundNormal).normalized;
+
+                Debug.Log(Vector3.Dot(desiredDirection, slopeDirection));
+
+                // Ensure the rotated momentum aligns with the downhill direction
+                if (Vector3.Dot(desiredDirection, slopeDirection) >= context.slideDotMin)
+                {
+                    Vector3 currentMomentum = Vector3.ProjectOnPlane(momentum, context.GroundNormal).normalized;
+
+                    // Rotate the momentum towards the desired direction
+                    Quaternion rotation     = Quaternion.FromToRotation(currentMomentum, desiredDirection);
+                    Quaternion interpolated = Quaternion.Slerp(Quaternion.identity, rotation, Time.fixedDeltaTime * context.slideRotationSpeed);
+
+                    // Apply the rotation and preserve the Y component
+                    float tempY = momentum.y;
+                    momentum    = interpolated * momentum;
+
+                    if (Vector3.Dot(momentum, slopeDirection) <= 0) momentum = Vector3.ProjectOnPlane(momentum, context.GroundNormal);
+
+                    momentum.y = tempY;
+                }
             }
 
             // Setting values
-            context.rb.velocity     = momentumVelocity;
+            context.rb.velocity     = momentum;
             context.DesiredVelocity = new Vector2(context.rb.velocity.x, context.rb.velocity.z);
 
-            Debug.DrawRay(context.rb.position, context.rb.velocity.normalized * 10, Color.red, 2);
+            //Debug.DrawRay(context.rb.position, context.rb.velocity.normalized * 10, Color.red, 2);
         }
 
+        public override void Exit()
+        {
+            context.ChangeSize(context.crouchSize, context.standardSize);
+        }
     }
 
     private class SlideJumping : State<PlayerController>
@@ -414,10 +454,14 @@ public class PlayerController : Player.PlayerComponent
             context.rb.velocity    = new Vector3(context.rb.velocity.x, context.slideJumpForce, context.rb.velocity.z);
         }
 
-        public override void FixedUpdate()
+        public override void Update()
         {
-            context.Move(true);
+            if (Input.GetKeyDown(KeyCode.Space)) {
+                context.jumpBufferTime = context.jumpBuffer;
+            }
         }
+
+        public override void FixedUpdate() => context.Move(true);
     }
 
     #region Debugging
@@ -437,10 +481,10 @@ public class PlayerController : Player.PlayerComponent
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(rb.transform.position + new Vector3(0, -groundCastDist, 0), groundCastRad);
+        Gizmos.DrawWireSphere(rb.transform.position + new Vector3(0, -groundCastDist * HalfSize, 0), groundCastRad);
 
         Gizmos.color = Color.blue;
-        Gizmos.DrawWireSphere(rb.transform.position + new Vector3(0, -fallingCastDist, 0), groundCastRad);
+        Gizmos.DrawWireSphere(rb.transform.position + new Vector3(0, -fallingCastDist * HalfSize, 0), groundCastRad);
     }
 
     private class DebugFlyingState : State<PlayerController>
