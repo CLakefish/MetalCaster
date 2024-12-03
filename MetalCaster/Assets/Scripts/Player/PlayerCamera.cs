@@ -10,10 +10,14 @@ public class PlayerCamera : Player.PlayerComponent
     [Header("Camera Control")]
     [SerializeField] private float viewRotationSmoothing = 0.2f;
     [SerializeField] private float fov = 90;
+    private float baseFOV;
     private Vector2 mouseRotation;
 
     [Header("Jump Bob")]
     [SerializeField] private AnimCurve jumpBob;
+
+    [Header("Slide Pulse")]
+    [SerializeField] private AnimCurve fovPulse;
 
     public Vector3 CameraForward { 
         get { 
@@ -62,8 +66,17 @@ public class PlayerCamera : Player.PlayerComponent
         }));
     }
 
+    public void FOVPulse() {
+        if (fovPulse.Coroutine != null) StopCoroutine(fovPulse.Coroutine);
+
+        fovPulse.Coroutine = StartCoroutine(fovPulse.Run(() => {
+            FOV = baseFOV + fovPulse.Continue(Time.deltaTime);
+        }));
+    }
+
     private void Start()
     {
+        baseFOV   = fov;
         FOV       = fov;
         MouseLock = true;
     }
@@ -73,6 +86,6 @@ public class PlayerCamera : Player.PlayerComponent
         mouseRotation.x = Mathf.Clamp(mouseRotation.x - playerInput.AlteredMousePosition.y, -89f, 89f);
         mouseRotation.y += playerInput.AlteredMousePosition.x;
 
-        camera.transform.localRotation = Quaternion.Euler(new Vector3(mouseRotation.x, mouseRotation.y, camera.transform.localRotation.z));
+        camera.transform.localRotation = Quaternion.Euler(new Vector3(mouseRotation.x, mouseRotation.y, camera.transform.eulerAngles.z));
     }
 }

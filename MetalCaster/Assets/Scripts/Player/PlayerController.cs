@@ -8,18 +8,16 @@ using System.Collections;
 // Concept recommendations by Oliver Beebe
 
 // TODO:
-// - Wall Run improved detection
 // - Wall Run improved rotation
 // - Wall Run view tilt
 // - Slide view tilt
-// - Minor tweaks to land vfx
 // - GUNS
 
 public class PlayerController : Player.PlayerComponent
 {
     [Header("References")]
-    [SerializeField] private Rigidbody rb;
-    [SerializeField] private CapsuleCollider collider;
+    [SerializeField] public Rigidbody rb;
+    [SerializeField] public CapsuleCollider collider;
 
     [Header("Collisions")]
     [SerializeField] private LayerMask layers;
@@ -28,11 +26,12 @@ public class PlayerController : Player.PlayerComponent
     [SerializeField] private int wallCastIncrements = 1;
     [SerializeField] private float wallCastDistance = 1;
 
-    private readonly float groundCastRad              = 0.225f;
+    private readonly float groundCastRad              = 0.35f;
     private readonly float raycastMargin              = 0.1f;
-    private readonly float floorStickThreshold        = 0.1f;
-    private readonly float floorStickCheckOffset      = 0.05f;
+    private readonly float floorStickThreshold        = 0.025f;
+
     private readonly float interpolateNormalCheckDist = 2.5f;
+    private readonly float interpolateNormalSpeed     = 15;
 
     [Header("Walking Parameters")]
     [SerializeField] private float moveSpeed;
@@ -67,6 +66,7 @@ public class PlayerController : Player.PlayerComponent
     [Header("Wall Run Parameters")]
     [SerializeField] private float wallRunSpeed;
     [SerializeField] private float wallRunGravityReduction;
+    [SerializeField] private float wallRunRotationSpeed;
 
     [Header("Wall Jump Parameters")]
     [SerializeField] private float wallJumpForce;
@@ -126,7 +126,8 @@ public class PlayerController : Player.PlayerComponent
 
     private bool AllowWallRun {
         get {
-            return Mathf.Sign(Vector3.SignedAngle(rb.velocity, WallPoint - rb.position, Vector3.up)) == playerInput.Input.x || playerInput.Input.y == 1;
+            float angle = Vector3.SignedAngle(WallNormal, ViewPositionNoY, Vector3.up);
+            return Mathf.Abs(angle) > 75;
         }
     }
 
@@ -143,6 +144,8 @@ public class PlayerController : Player.PlayerComponent
             return hfsm.PreviousState;
         }
     }
+
+    public bool IsWallRunning { get { return CurrentState == WallRun; } }
 
     private GroundedState Grounded  { get; set; }
     private FallingState  Falling   { get; set; }
@@ -161,6 +164,9 @@ public class PlayerController : Player.PlayerComponent
 
     private void OnEnable()
     {
+        ResetGroundCollisions();
+        ResetWallCollisions();
+
         hfsm       = new(this);
         Grounded   = new(this);
         Falling    = new(this);
@@ -192,7 +198,7 @@ public class PlayerController : Player.PlayerComponent
             new(Falling, SlideJump,  () => Input.GetKeyDown(KeyCode.Space) && PreviousState == Sliding  && hfsm.Duration < coyoteTime),
             new(Falling, Jumping,    () => Input.GetKeyDown(KeyCode.Space) && PreviousState == Grounded && hfsm.Duration < coyoteTime),
             new(Falling, Sliding,    () => GroundCollision && Input.GetKey(KeyCode.LeftControl)),
-            new(Falling, Grounded,   () => GroundCollision),
+            new(Falling, Grounded,   () => GroundCollision && !Input.GetKey(KeyCode.LeftControl)),
             new(Falling, WallRun,    () => WallCollision && !GroundCollision && AllowWallRun),
             new(Falling, WallJump,   () => WallCollision && (Input.GetKeyDown(KeyCode.Space) || jumpBufferTime > 0)),
 
@@ -217,11 +223,11 @@ public class PlayerController : Player.PlayerComponent
             new(WallJump, WallRun,   () => WallCollision && AllowWallRun && hfsm.Duration >= wallJumpTime),
 
 #if UNITY_EDITOR
-            new(null,     DebugFly,  () => Input.GetKeyDown(KeyCode.V)),
-            new(DebugFly, Falling,   () => Input.GetKeyDown(KeyCode.V)),
+            new(null,     DebugFly,  () => Input.GetKeyDown(KeyCode.F)),
+            new(DebugFly, Falling,   () => Input.GetKeyDown(KeyCode.F)),
 
-            new(null, DebugPause,    () => Input.GetKeyDown(KeyCode.B)),
-            new(DebugPause, Falling, () => Input.GetKeyDown(KeyCode.B)),
+            new(null, DebugPause,    () => Input.GetKeyDown(KeyCode.G)),
+            new(DebugPause, Falling, () => Input.GetKeyDown(KeyCode.G)),
 #endif
         });
 
@@ -251,7 +257,7 @@ public class PlayerController : Player.PlayerComponent
 
         hfsm.FixedUpdate();
 
-        if (!GroundCollision && !SlopeCollision) rb.velocity -= new Vector3(0, gravity, 0) * Time.fixedDeltaTime;
+        if (!GroundCollision) rb.velocity -= new Vector3(0, gravity, 0) * Time.fixedDeltaTime;
     }
 
     private void Move(bool maintainMomentum = true)
@@ -268,9 +274,7 @@ public class PlayerController : Player.PlayerComponent
 
         Vector3 setVelocity = new (DesiredVelocity.x, rb.velocity.y, DesiredVelocity.y);
 
-        if (hfsm.CurrentState == Grounded && SlopeCollision) {
-            setVelocity     = Quaternion.FromToRotation(Vector3.up, GroundNormal) * setVelocity;
-        }
+        if (hfsm.CurrentState == Grounded && SlopeCollision) setVelocity = Quaternion.FromToRotation(Vector3.up, GroundNormal) * setVelocity;
 
         setVelocity.y = Mathf.Clamp(setVelocity.y, maxFallSpeed, Mathf.Infinity);
         rb.velocity   = setVelocity;
@@ -282,24 +286,44 @@ public class PlayerController : Player.PlayerComponent
 
         if (Physics.SphereCast(rb.transform.position, groundCastRad, Vector3.down, out RaycastHit interpolated, castDist, layers))
         {
-            Vector3 dir  = interpolated.point - rb.transform.position;
+            Vector3 dir = interpolated.point - rb.transform.position;
 
             // SphereCast interpolates the floor normal, resulting in a jitter when relying soly on it. So, to fix this I use 2 raycasts
             // 1. Is used to derive the nonInterpolated floor normal
             // 2. Is to ensure that the interpolated floor normal is used on sharp ground changes (makes it so much smoother)
             if (Physics.Raycast(rb.transform.position, dir, out RaycastHit nonInterpolated, dir.magnitude + raycastMargin, layers)) {
                 // FUCKKKKK!!!!
-                if (Vector3.Angle(Vector3.up, nonInterpolated.normal) >= 90) return;
+                float nonInterpolatedAngle = Vector3.Angle(Vector3.up, nonInterpolated.normal);
+                if (nonInterpolatedAngle >= 90) return;
 
-                Vector3 vel            = new Vector3(rb.velocity.normalized.x, 0, rb.velocity.normalized.z).normalized;
-                Vector3 pos            = rb.transform.position + vel - (Vector3.up * ((Size / 2.0f) - floorStickCheckOffset));
-                bool interpolateNormal = Physics.Raycast(pos, Vector3.down, interpolateNormalCheckDist, layers);
+                Vector3 normal = nonInterpolated.normal;
+                Vector3 vel = new Vector3(rb.velocity.normalized.x, 0.5f, rb.velocity.normalized.z).normalized * collider.radius;
+                Vector3 pos = rb.transform.position + vel - (Vector3.up * (Size / 2.0f));
 
+                // Fix this to do a proper interpolation :)
+                bool NormalFix = Physics.Raycast(pos, Vector3.down, out RaycastHit floorCheck, interpolateNormalCheckDist, layers);
+                float fixAngle = Vector3.Angle(Vector3.up, floorCheck.normal);
+
+                // This is so gross dude :(
+                if (NormalFix && (fixAngle == 0 || nonInterpolatedAngle == 0) && fixAngle != nonInterpolatedAngle && rb.velocity.y >= 0)
+                {
+                    normal = Vector3.Lerp(GroundNormal, floorCheck.normal, Time.fixedDeltaTime * interpolateNormalSpeed);
+                }
+                else if (NormalFix && fixAngle != 0 && nonInterpolatedAngle != 0)
+                {
+                    normal = interpolated.normal;
+                }
+
+                GroundNormal = normal;
                 GroundPoint  = nonInterpolated.point;
-                GroundNormal = interpolateNormal ? interpolated.normal : nonInterpolated.normal;
+            }
+            else
+            {
+                GroundPoint  = interpolated.point;
+                GroundNormal = Vector3.up;
             }
 
-            float angle     = Vector3.Angle(Vector3.up, GroundNormal);
+            float angle = Vector3.Angle(Vector3.up, interpolated.normal);
             GroundCollision = true;
             SlopeCollision  = angle > 0 && angle < 90;
             return;
@@ -328,8 +352,17 @@ public class PlayerController : Player.PlayerComponent
         ResetWallCollisions();
     }
 
-    private void ResetGroundCollisions() => SlopeCollision = GroundCollision = false;
-    private void ResetWallCollisions()   => WallCollision = false;
+    private void ResetGroundCollisions()
+    {
+        SlopeCollision = GroundCollision = false;
+        GroundNormal = Vector3.up;
+    }
+
+    private void ResetWallCollisions()
+    {
+        WallNormal = Vector3.up;
+        WallCollision = false;
+    }
 
     private void ChangeSize(float endSize)
     {
@@ -350,32 +383,32 @@ public class PlayerController : Player.PlayerComponent
 
     private class GroundedState : State<PlayerController>
     {
+        private Vector3 stickVel;
         public GroundedState(PlayerController context) : base(context) { }
 
-        public override void Enter()
-        {
-            context.ChangeSize(context.standardSize);
-            context.slideBoost = true;
+        public override void Enter() {
+            if (!Input.GetKey(KeyCode.LeftControl))
+            {
+                context.ChangeSize(context.standardSize);
+                if (context.PreviousState == context.Falling) context.playerCamera.JumpBob();
+            }
 
-            if (context.PreviousState == context.Falling && !Input.GetKey(KeyCode.LeftControl)) context.playerCamera.JumpBob();
+            context.slideBoost = true;
+            stickVel = Vector3.zero;
         }
 
-        public override void FixedUpdate()
-        {
+        public override void FixedUpdate() {
             GroundStick();
             context.Move(context.hfsm.Duration < context.groundMomentumConserveTime);
         }
 
-        private void GroundStick()
-        {
+        private void GroundStick() {
             float halfSize = context.Size / 2.0f;
-            float yPos    = context.Position.y - halfSize - context.GroundPoint.y;
-            float yCheck  = context.floorStickThreshold;
+            float yPos     = context.Position.y - halfSize - context.GroundPoint.y;
+            float yCheck   = context.floorStickThreshold;
 
             // Floor sticking/Ground correction
-            if (yPos > yCheck) {
-                context.Position = Vector3.MoveTowards(context.Position, new Vector3(context.Position.x, context.GroundPoint.y + halfSize, context.Position.z), Time.fixedDeltaTime * context.groundStickSpeed);
-            }
+            if (yPos > yCheck) context.Position = Vector3.SmoothDamp(context.Position, new Vector3(context.Position.x, context.GroundPoint.y + halfSize, context.Position.z), ref stickVel, context.groundStickSpeed, Mathf.Infinity, Time.fixedDeltaTime);
 
             context.rb.velocity = new Vector3(context.rb.velocity.x, 0, context.rb.velocity.z);
         }
@@ -385,15 +418,8 @@ public class PlayerController : Player.PlayerComponent
     {
         public FallingState(PlayerController context) : base(context) { }
 
-        public override void Update()
-        {
-            if (Input.GetKeyDown(KeyCode.Space)) {
-                context.jumpBufferTime = context.jumpBuffer;
-            }
-
-            if (!Input.GetKey(KeyCode.LeftControl) && context.Size == context.crouchSize) {
-                context.ChangeSize(context.standardSize);
-            }
+        public override void Update() {
+            if (Input.GetKeyDown(KeyCode.Space)) context.jumpBufferTime = context.jumpBuffer;
         }
 
         public override void FixedUpdate() => context.Move(true);
@@ -422,12 +448,15 @@ public class PlayerController : Player.PlayerComponent
             if (context.PreviousState == context.Falling) context.playerCamera.JumpBob();
 
             if (context.slideBoost) {
+                context.playerCamera.FOVPulse();
+
                 Vector3 dir         = (context.ViewPositionNoY * context.slideForce) + (context.gravity * Time.fixedDeltaTime * Vector3.down);
                 momentum            = Vector3.ProjectOnPlane(dir, context.GroundNormal);
                 context.rb.velocity = momentum;
             }
             else {
                 momentum = context.rb.velocity;
+                if (!context.SlopeCollision) momentum.y = 0;
             }
 
             context.DesiredVelocity = new Vector2(momentum.x, momentum.z);
@@ -455,7 +484,7 @@ public class PlayerController : Player.PlayerComponent
                     : increasedValue + (context.slideSlopeMomentumGain * (angle / 90) * Time.fixedDeltaTime);
             }
             else {
-                desiredVelocity  = Vector3.zero;
+                desiredVelocity  = context.ViewPositionNoY;
                 increasedValue   = 1;
             }
 
@@ -473,7 +502,7 @@ public class PlayerController : Player.PlayerComponent
                     // Rotate the momentum towards the desired direction
                     Quaternion rotation     = Quaternion.FromToRotation(currentMomentum, desiredDirection);
                     Quaternion interpolated = Quaternion.Slerp(Quaternion.identity, rotation, Time.fixedDeltaTime * context.slideRotationSpeed);
-                    momentum    = interpolated * momentum;
+                    momentum = interpolated * momentum;
 
                     if (Vector3.Dot(momentum, slopeDirection) <= 0) momentum = Vector3.ProjectOnPlane(momentum, context.GroundNormal);
                 }
@@ -497,9 +526,7 @@ public class PlayerController : Player.PlayerComponent
         }
 
         public override void Update() {
-            if (Input.GetKeyDown(KeyCode.Space)) {
-                context.jumpBufferTime = context.jumpBuffer;
-            }
+            if (Input.GetKeyDown(KeyCode.Space)) context.jumpBufferTime = context.jumpBuffer;
         }
 
         public override void FixedUpdate() => context.Move(true);
@@ -507,24 +534,91 @@ public class PlayerController : Player.PlayerComponent
 
     private class WallRunning : State<PlayerController>
     {
+        private Vector3 prevForward;
+        private float interpolatedYaw;
         public WallRunning(PlayerController context) : base(context) { }
 
-        // QUATERNIONS!!!!
-
-        public override void Enter()
-        {
-            context.rb.velocity     = Vector3.ProjectOnPlane(new Vector3(context.rb.velocity.x, Mathf.Max(context.rb.velocity.y, 0), context.rb.velocity.z), Vector3.Cross(context.WallNormal, context.ViewPositionNoY));
+        public override void Enter() {
+            float tempY             = Mathf.Max(context.rb.velocity.y, 0);
+            context.rb.velocity     = GetProjected();
+            context.rb.velocity     = new Vector3(context.rb.velocity.x, tempY, context.rb.velocity.z);
             context.DesiredVelocity = new Vector2(context.rb.velocity.x, context.rb.velocity.z);
+
+            prevForward = context.WallNormal;
+            interpolatedYaw = context.rb.transform.eulerAngles.y;
+        }
+
+        public override void Update() {
+            // Not Functional
+            if (context.playerInput.MousePosition == Vector2.zero)
+            {
+                if (prevForward == context.WallNormal) return;
+
+                /*
+                prevForward = Vector3.zero;
+
+                Vector3 camForward = context.playerCamera.CameraForward;
+                Vector3 wallDir = Vector3.ProjectOnPlane(camForward, context.WallNormal).normalized;
+                Vector3 wallForward = Vector3.Cross(context.WallNormal, wallDir).normalized;
+
+                float desiredYaw = Mathf.Atan2(wallForward.x, wallForward.z) * Mathf.Rad2Deg;
+
+                interpolatedYaw = Mathf.LerpAngle(interpolatedYaw, desiredYaw, context.wallRunRotationSpeed * Time.deltaTime);
+
+                Debug.Log(interpolatedYaw);
+                Debug.DrawRay(context.WallPoint, Quaternion.Euler(new Vector3(0, interpolatedYaw, 0)) * context.WallNormal, Color.blue, 5);
+
+                context.rb.transform.rotation = Quaternion.Euler(0, interpolatedYaw, 0);*/
+
+                Vector3 camForward = context.playerCamera.CameraForwardNoY;
+                Vector3 wallDir = Vector3.ProjectOnPlane(camForward, context.WallNormal).normalized;
+                Vector3 wallForward = Quaternion.FromToRotation(wallDir, Vector3.up) * Vector3.forward;
+
+                if (prevForward != Vector3.zero)
+                {
+                    float angleDifference = Vector3.SignedAngle(prevForward, wallForward, Vector3.up);
+                    context.rb.transform.Rotate(0, angleDifference, 0);
+                }
+
+                prevForward = wallForward;
+
+                // Debug visualization
+                Debug.DrawRay(context.WallPoint, wallForward, Color.red, 10);
+            }
+             
+            /*
+            // Functional
+            if (context.playerInput.MousePosition == Vector2.zero)
+            {
+                Vector3 camForward = context.playerCamera.CameraForwardNoY;
+                Vector3 wallDir = Vector3.ProjectOnPlane(camForward, context.WallNormal).normalized;
+                Vector3 wallForward = Quaternion.FromToRotation(wallDir, Vector3.up) * Vector3.forward;
+
+                if (prevForward != Vector3.zero)
+                {
+                    float angleDifference = Vector3.SignedAngle(prevForward, wallForward, Vector3.up);
+                    context.rb.transform.Rotate(0, angleDifference, 0);
+                }
+
+                prevForward = wallForward;
+
+                Debug.DrawRay(context.rb.position, prevForward * 10, Color.red, 10);
+            }*/
         }
 
         public override void FixedUpdate() {
-            Vector3 projected   = Vector3.ProjectOnPlane(Vector3.ProjectOnPlane(context.rb.velocity, context.WallNormal).normalized, Vector3.Cross(context.WallNormal, context.ViewPositionNoY));
+            Vector3 projected   = GetProjected();
+
             float downwardForce = context.rb.velocity.y < 0 
                 ? context.gravity * Time.fixedDeltaTime * context.wallRunGravityReduction
                 : 0;
 
-            context.DesiredVelocity = new Vector2(projected.x, projected.z).normalized * Mathf.Max(context.wallRunSpeed, Mathf.Abs(new Vector2(context.rb.velocity.x, context.rb.velocity.z).magnitude));
-            context.rb.velocity     = new Vector3(context.DesiredVelocity.x, context.rb.velocity.y + downwardForce, context.DesiredVelocity.y);
+            context.DesiredVelocity = new Vector2(projected.x, projected.z);
+            context.rb.velocity     = new Vector3(context.DesiredVelocity.x, context.rb.velocity.y + downwardForce, context.DesiredVelocity.y) - (context.WallNormal * Time.fixedDeltaTime * 100);
+        }
+
+        Vector3 GetProjected() {
+            return Vector3.ProjectOnPlane(context.rb.velocity, context.WallNormal).normalized * Mathf.Max(context.wallRunSpeed, Mathf.Abs(context.rb.velocity.magnitude));
         }
     }
 
@@ -534,13 +628,16 @@ public class PlayerController : Player.PlayerComponent
 
         public override void Enter() {
             Vector3 dir    = context.playerCamera.CameraForwardNoY;
+
             if (Vector3.Dot(dir, context.WallNormal) <= context.wallJumpMinDot) dir = (context.playerCamera.CameraForwardNoY + context.WallNormal).normalized;
+
             Vector3 vel    = Quaternion.FromToRotation(context.rb.velocity.normalized, dir) * context.rb.velocity.normalized;
             Vector2 noYVel = new(context.rb.velocity.x, context.rb.velocity.z);
 
             vel *= Mathf.Abs(noYVel.magnitude) < context.wallJumpForce 
                 ? context.wallJumpForce
                 : noYVel.magnitude;
+
             vel += Vector3.up * context.wallJumpHeight;
 
             context.rb.velocity     = vel;
@@ -559,8 +656,7 @@ public class PlayerController : Player.PlayerComponent
     private DebugFlyingState DebugFly { get; set; }
     private DebugPauseState DebugPause { get; set; }
 
-    private void OnGUI()
-    {
+    private void OnGUI() {
         hfsm.OnGUI();
 
         GUILayout.BeginArea(new Rect(10, 150, 800, 200));
@@ -570,8 +666,7 @@ public class PlayerController : Player.PlayerComponent
         GUILayout.EndArea();
     }
 
-    private void OnDrawGizmos()
-    {
+    private void OnDrawGizmos() {
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(rb.transform.position + new Vector3(0, -groundCastDist * Size / 2, 0), groundCastRad);
 
