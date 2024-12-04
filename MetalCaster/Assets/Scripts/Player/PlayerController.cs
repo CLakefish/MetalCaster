@@ -535,7 +535,7 @@ public class PlayerController : Player.PlayerComponent
     private class WallRunning : State<PlayerController>
     {
         private Vector3 prevForward;
-        private float interpolatedYaw;
+        private Quaternion targetRotation;
         public WallRunning(PlayerController context) : base(context) { }
 
         public override void Enter() {
@@ -544,66 +544,34 @@ public class PlayerController : Player.PlayerComponent
             context.rb.velocity     = new Vector3(context.rb.velocity.x, tempY, context.rb.velocity.z);
             context.DesiredVelocity = new Vector2(context.rb.velocity.x, context.rb.velocity.z);
 
-            prevForward = context.WallNormal;
-            interpolatedYaw = context.rb.transform.eulerAngles.y;
+            prevForward    = context.WallNormal;
+            targetRotation = context.rb.transform.localRotation;
         }
 
         public override void Update() {
-            // Not Functional
+
             if (context.playerInput.MousePosition == Vector2.zero)
             {
-                if (prevForward == context.WallNormal) return;
+                context.rb.MoveRotation(Quaternion.Slerp(
+                    context.rb.transform.localRotation,
+                    targetRotation,
+                    Time.deltaTime * context.wallRunRotationSpeed
+                ));
 
-                /*
-                prevForward = Vector3.zero;
-
-                Vector3 camForward = context.playerCamera.CameraForward;
-                Vector3 wallDir = Vector3.ProjectOnPlane(camForward, context.WallNormal).normalized;
-                Vector3 wallForward = Vector3.Cross(context.WallNormal, wallDir).normalized;
-
-                float desiredYaw = Mathf.Atan2(wallForward.x, wallForward.z) * Mathf.Rad2Deg;
-
-                interpolatedYaw = Mathf.LerpAngle(interpolatedYaw, desiredYaw, context.wallRunRotationSpeed * Time.deltaTime);
-
-                Debug.Log(interpolatedYaw);
-                Debug.DrawRay(context.WallPoint, Quaternion.Euler(new Vector3(0, interpolatedYaw, 0)) * context.WallNormal, Color.blue, 5);
-
-                context.rb.transform.rotation = Quaternion.Euler(0, interpolatedYaw, 0);*/
-
-                Vector3 camForward = context.playerCamera.CameraForwardNoY;
-                Vector3 wallDir = Vector3.ProjectOnPlane(camForward, context.WallNormal).normalized;
-                Vector3 wallForward = Quaternion.FromToRotation(wallDir, Vector3.up) * Vector3.forward;
-
-                if (prevForward != Vector3.zero)
+                if (prevForward != context.WallNormal)
                 {
-                    float angleDifference = Vector3.SignedAngle(prevForward, wallForward, Vector3.up);
-                    context.rb.transform.Rotate(0, angleDifference, 0);
+                    float angle              = Vector3.SignedAngle(prevForward, context.WallNormal, Vector3.up);
+                    Quaternion angleRotation = Quaternion.Euler(0, angle, 0);
+
+                    targetRotation = context.rb.transform.localRotation * angleRotation;
+                    prevForward    = context.WallNormal;
                 }
-
-                prevForward = wallForward;
-
-                // Debug visualization
-                Debug.DrawRay(context.WallPoint, wallForward, Color.red, 10);
             }
-             
-            /*
-            // Functional
-            if (context.playerInput.MousePosition == Vector2.zero)
+            else
             {
-                Vector3 camForward = context.playerCamera.CameraForwardNoY;
-                Vector3 wallDir = Vector3.ProjectOnPlane(camForward, context.WallNormal).normalized;
-                Vector3 wallForward = Quaternion.FromToRotation(wallDir, Vector3.up) * Vector3.forward;
-
-                if (prevForward != Vector3.zero)
-                {
-                    float angleDifference = Vector3.SignedAngle(prevForward, wallForward, Vector3.up);
-                    context.rb.transform.Rotate(0, angleDifference, 0);
-                }
-
-                prevForward = wallForward;
-
-                Debug.DrawRay(context.rb.position, prevForward * 10, Color.red, 10);
-            }*/
+                prevForward    = context.WallNormal;
+                targetRotation = context.rb.transform.localRotation;
+            }
         }
 
         public override void FixedUpdate() {
@@ -614,7 +582,7 @@ public class PlayerController : Player.PlayerComponent
                 : 0;
 
             context.DesiredVelocity = new Vector2(projected.x, projected.z);
-            context.rb.velocity     = new Vector3(context.DesiredVelocity.x, context.rb.velocity.y + downwardForce, context.DesiredVelocity.y) - (context.WallNormal * Time.fixedDeltaTime * 100);
+            context.rb.velocity     = new Vector3(context.DesiredVelocity.x, context.rb.velocity.y + downwardForce, context.DesiredVelocity.y) - (context.WallNormal * Time.fixedDeltaTime);
         }
 
         Vector3 GetProjected() {
