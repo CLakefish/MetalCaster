@@ -8,9 +8,11 @@ using System.Collections;
 // Concept recommendations by Oliver Beebe
 
 // TODO:
-// - Wall Run improved rotation
-// - Wall Run view tilt
+// - Crouching State
+// - Slide stick
 // - Slide view tilt
+// - Wall Run view tilt
+// - Wall Run improved gravity
 // - GUNS
 
 public class PlayerController : Player.PlayerComponent
@@ -31,7 +33,7 @@ public class PlayerController : Player.PlayerComponent
     private readonly float floorStickThreshold        = 0.025f;
 
     private readonly float interpolateNormalCheckDist = 2.5f;
-    private readonly float interpolateNormalSpeed     = 15;
+    [SerializeField] private float interpolateNormalSpeed     = 35;
 
     [Header("Walking Parameters")]
     [SerializeField] private float moveSpeed;
@@ -74,14 +76,15 @@ public class PlayerController : Player.PlayerComponent
     [SerializeField] private float wallJumpTime;
     [SerializeField] private float wallJumpMinDot = 0.25f;
 
-    private bool GroundCollision { get; set; }
-    private bool SlopeCollision  { get; set; }
-    private Vector3 GroundNormal { get; set; }
-    private Vector3 GroundPoint  { get; set; }
+    private bool GroundCollision                { get; set; }
+    private bool SlopeCollision                 { get; set; }
+    private Vector3 GroundNormal                { get; set; }
+    private Vector3 NonInterpolatedGroundNormal { get; set; }
+    private Vector3 GroundPoint                 { get; set; }
 
-    private bool WallCollision   { get; set; }
-    private Vector3 WallNormal   { get; set; }
-    private Vector3 WallPoint    { get; set; }
+    private bool WallCollision                  { get; set; }
+    private Vector3 WallNormal                  { get; set; }
+    private Vector3 WallPoint                   { get; set; }
 
     private float Size {
         get { 
@@ -274,7 +277,11 @@ public class PlayerController : Player.PlayerComponent
 
         Vector3 setVelocity = new (DesiredVelocity.x, rb.velocity.y, DesiredVelocity.y);
 
-        if (hfsm.CurrentState == Grounded && SlopeCollision) setVelocity = Quaternion.FromToRotation(Vector3.up, GroundNormal) * setVelocity;
+        if (hfsm.CurrentState == Grounded && SlopeCollision)
+        {
+            setVelocity.y = 0;
+            setVelocity   = Quaternion.FromToRotation(Vector3.up, GroundNormal) * setVelocity;
+        }
 
         setVelocity.y = Mathf.Clamp(setVelocity.y, maxFallSpeed, Mathf.Infinity);
         rb.velocity   = setVelocity;
@@ -297,7 +304,7 @@ public class PlayerController : Player.PlayerComponent
                 if (nonInterpolatedAngle >= 90) return;
 
                 Vector3 normal = nonInterpolated.normal;
-                Vector3 vel = new Vector3(rb.velocity.normalized.x, 0.5f, rb.velocity.normalized.z).normalized * collider.radius;
+                Vector3 vel = new Vector3(rb.velocity.normalized.x, 0.5f, rb.velocity.normalized.z).normalized * (collider.radius / 2.0f);
                 Vector3 pos = rb.transform.position + vel - (Vector3.up * (Size / 2.0f));
 
                 // Fix this to do a proper interpolation :)
@@ -305,22 +312,20 @@ public class PlayerController : Player.PlayerComponent
                 float fixAngle = Vector3.Angle(Vector3.up, floorCheck.normal);
 
                 // This is so gross dude :(
-                if (NormalFix && (fixAngle == 0 || nonInterpolatedAngle == 0) && fixAngle != nonInterpolatedAngle && rb.velocity.y >= 0)
+                if (NormalFix && (fixAngle == 0 || nonInterpolatedAngle == 0) && fixAngle != nonInterpolatedAngle && rb.velocity.y <= 0)
                 {
-                    normal = Vector3.Lerp(GroundNormal, floorCheck.normal, Time.fixedDeltaTime * interpolateNormalSpeed);
-                }
-                else if (NormalFix && fixAngle != 0 && nonInterpolatedAngle != 0)
-                {
-                    normal = interpolated.normal;
+                    normal = floorCheck.normal;
                 }
 
-                GroundNormal = normal;
+                NonInterpolatedGroundNormal = normal;
+                GroundNormal = Vector3.Slerp(GroundNormal, normal, Time.fixedDeltaTime * interpolateNormalSpeed);
                 GroundPoint  = nonInterpolated.point;
             }
             else
             {
                 GroundPoint  = interpolated.point;
-                GroundNormal = Vector3.up;
+                GroundNormal = Vector3.Slerp(GroundNormal, interpolated.normal, Time.fixedDeltaTime * interpolateNormalSpeed);
+                NonInterpolatedGroundNormal = interpolated.normal;
             }
 
             float angle = Vector3.Angle(Vector3.up, interpolated.normal);
@@ -408,7 +413,10 @@ public class PlayerController : Player.PlayerComponent
             float yCheck   = context.floorStickThreshold;
 
             // Floor sticking/Ground correction
-            if (yPos > yCheck) context.Position = Vector3.SmoothDamp(context.Position, new Vector3(context.Position.x, context.GroundPoint.y + halfSize, context.Position.z), ref stickVel, context.groundStickSpeed, Mathf.Infinity, Time.fixedDeltaTime);
+            if (yPos > yCheck)
+            {
+                context.Position = Vector3.SmoothDamp(context.Position, new Vector3(context.Position.x, context.GroundPoint.y + halfSize, context.Position.z), ref stickVel, context.groundStickSpeed, Mathf.Infinity, Time.fixedDeltaTime);
+            }
 
             context.rb.velocity = new Vector3(context.rb.velocity.x, 0, context.rb.velocity.z);
         }
@@ -451,7 +459,7 @@ public class PlayerController : Player.PlayerComponent
                 context.playerCamera.FOVPulse();
 
                 Vector3 dir         = (context.ViewPositionNoY * context.slideForce) + (context.gravity * Time.fixedDeltaTime * Vector3.down);
-                momentum            = Vector3.ProjectOnPlane(dir, context.GroundNormal);
+                momentum            = Vector3.ProjectOnPlane(dir, context.NonInterpolatedGroundNormal);
                 context.rb.velocity = momentum;
             }
             else {
@@ -472,7 +480,7 @@ public class PlayerController : Player.PlayerComponent
             // Gaining momentum
             if (context.SlopeCollision) {
                 // Get the gravity, angle, and current momentumDirection
-                Vector3 slopeGravity       = Vector3.ProjectOnPlane(Vector3.down * (context.gravity + increasedValue), context.GroundNormal);
+                Vector3 slopeGravity       = Vector3.ProjectOnPlane(Vector3.down * (context.gravity + increasedValue), context.NonInterpolatedGroundNormal);
                 Vector3 momentumDirection  = momentum.normalized;
                 float angle                = Vector3.Angle(Vector3.up, context.GroundNormal);
                 float newMomentumMagnitude = Mathf.Max(1, momentum.magnitude - angle);
@@ -492,19 +500,19 @@ public class PlayerController : Player.PlayerComponent
             momentum = Vector3.MoveTowards(momentum, desiredVelocity, Time.fixedDeltaTime * context.slideAcceleration);
 
             if (context.ViewPositionNoY != Vector3.zero) {
-                Vector3 desiredDirection = Vector3.ProjectOnPlane(context.ViewPositionNoY, context.GroundNormal).normalized;
-                Vector3 slopeDirection   = Vector3.ProjectOnPlane(Vector3.down, context.GroundNormal).normalized;
+                Vector3 desiredDirection = Vector3.ProjectOnPlane(context.ViewPositionNoY, context.NonInterpolatedGroundNormal).normalized;
+                Vector3 slopeDirection   = Vector3.ProjectOnPlane(Vector3.down, context.NonInterpolatedGroundNormal).normalized;
 
                 // Ensure the rotated momentum aligns with the downhill direction
                 if (Vector3.Dot(desiredDirection, slopeDirection) >= context.slideDotMin) {
-                    Vector3 currentMomentum = Vector3.ProjectOnPlane(momentum, context.GroundNormal).normalized;
+                    Vector3 currentMomentum = Vector3.ProjectOnPlane(momentum, context.NonInterpolatedGroundNormal).normalized;
 
                     // Rotate the momentum towards the desired direction
                     Quaternion rotation     = Quaternion.FromToRotation(currentMomentum, desiredDirection);
                     Quaternion interpolated = Quaternion.Slerp(Quaternion.identity, rotation, Time.fixedDeltaTime * context.slideRotationSpeed);
                     momentum = interpolated * momentum;
 
-                    if (Vector3.Dot(momentum, slopeDirection) <= 0) momentum = Vector3.ProjectOnPlane(momentum, context.GroundNormal);
+                    if (Vector3.Dot(momentum, slopeDirection) <= 0) momentum = Vector3.ProjectOnPlane(momentum, context.NonInterpolatedGroundNormal);
                 }
             }
 
