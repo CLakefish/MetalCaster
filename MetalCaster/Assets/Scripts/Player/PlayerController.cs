@@ -321,21 +321,15 @@ public class PlayerController : Player.PlayerComponent
                 float nonInterpolatedAngle = Vector3.Angle(Vector3.up, nonInterpolated.normal);
                 if (nonInterpolatedAngle >= 90) return;
 
-                Vector3 normal = nonInterpolated.normal;
-                Vector3 pos    = rb.transform.position - (Vector3.up * (Size / 2.0f));
-
-                if (Physics.Raycast(pos, Vector3.down, interpolateNormalCheckDist, layers)) normal = interpolated.normal;
-
                 GroundNormal = interpolated.normal;
-                GroundPoint  = nonInterpolated.point;
             }
             else
             {
-                GroundPoint  = interpolated.point;
                 GroundNormal = Vector3.up;
             }
 
-            float angle = Vector3.Angle(Vector3.up, interpolated.normal);
+            float angle     = Vector3.Angle(Vector3.up, interpolated.normal);
+            GroundPoint     = interpolated.point;
             GroundCollision = true;
             SlopeCollision  = angle > 0 && angle < 90;
             return;
@@ -599,7 +593,7 @@ public class PlayerController : Player.PlayerComponent
                     float angle              = Vector3.SignedAngle(prevForward, context.WallNormal, Vector3.up);
                     Quaternion angleRotation = Quaternion.Euler(0, angle, 0);
 
-                    targetRotation = context.rb.transform.localRotation * angleRotation;
+                    targetRotation = targetRotation * angleRotation;
                 }
             }
             else
@@ -618,7 +612,7 @@ public class PlayerController : Player.PlayerComponent
                 : 0;
 
             context.DesiredVelocity = new Vector2(projected.x, projected.z);
-            context.rb.velocity     = new Vector3(context.DesiredVelocity.x, context.rb.velocity.y + downwardForce, context.DesiredVelocity.y) - (context.WallNormal * Time.fixedDeltaTime * 50);
+            context.rb.velocity     = new Vector3(context.DesiredVelocity.x, context.rb.velocity.y + downwardForce, context.DesiredVelocity.y);
         }
 
         Vector3 GetProjected() {
