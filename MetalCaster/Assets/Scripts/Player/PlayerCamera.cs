@@ -10,14 +10,23 @@ public class PlayerCamera : Player.PlayerComponent
     [Header("Camera Control")]
     [SerializeField] private float viewRotationSmoothing = 0.2f;
     [SerializeField] private float fov = 90;
-    private float baseFOV;
     private Vector2 mouseRotation;
+    private Vector2 viewTilt;
+    private float baseFOV;
+    private float desiredZRotation;
+    private float cameraVel;
 
     [Header("Jump Bob")]
     [SerializeField] private AnimCurve jumpBob;
 
     [Header("Slide Pulse")]
     [SerializeField] private AnimCurve fovPulse;
+
+    [Header("View Tilting")]
+    [SerializeField] private float viewTiltAngle;
+
+    [Header("Wall Running")]
+    [SerializeField] private float wallRunAngle;
 
     public Vector3 CameraForward { 
         get { 
@@ -74,6 +83,16 @@ public class PlayerCamera : Player.PlayerComponent
         }));
     }
 
+    public void WallRunRotate(Vector3 normal)
+    {
+        desiredZRotation = wallRunAngle * -Mathf.Sign(Vector3.SignedAngle(CameraForwardNoY, normal, Vector3.up)) * (1.0f - Mathf.Abs(Vector3.Dot(normal, CameraForward)));
+    }
+
+    public void ViewTilt()
+    {
+        viewTilt.x = -playerInput.Input.x * viewTiltAngle;
+    }
+
     private void Start()
     {
         baseFOV   = fov;
@@ -86,6 +105,10 @@ public class PlayerCamera : Player.PlayerComponent
         mouseRotation.x = Mathf.Clamp(mouseRotation.x - playerInput.AlteredMousePosition.y, -89f, 89f);
         mouseRotation.y += playerInput.AlteredMousePosition.x;
 
-        camera.transform.localRotation = Quaternion.Euler(new Vector3(mouseRotation.x, mouseRotation.y, camera.transform.eulerAngles.z));
+        float currentZ   = Mathf.SmoothDampAngle(camera.transform.localEulerAngles.z, desiredZRotation + viewTilt.x, ref cameraVel, viewRotationSmoothing);
+        desiredZRotation = 0;
+        viewTilt         = Vector2.zero;
+
+        camera.transform.localRotation = Quaternion.Euler(new Vector3(mouseRotation.x, mouseRotation.y, currentZ));
     }
 }

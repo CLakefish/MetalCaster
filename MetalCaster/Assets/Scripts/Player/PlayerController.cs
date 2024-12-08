@@ -28,10 +28,9 @@ public class PlayerController : Player.PlayerComponent
     [SerializeField] private float wallCastDistance = 1;
     [SerializeField] private float interpolateNormalSpeed = 35;
 
-    private readonly float groundCastRad              = 0.35f;
+    private readonly float groundCastRad              = 0.45f;
     private readonly float raycastMargin              = 0.1f;
     private readonly float floorStickThreshold        = 0.05f;
-    private readonly float interpolateNormalCheckDist = 2.5f;
 
     [Header("Walking Parameters")]
     [SerializeField] private float moveSpeed;
@@ -53,6 +52,7 @@ public class PlayerController : Player.PlayerComponent
 
     [Header("Sliding Parameters")]
     [SerializeField] private float slideForce;
+    [SerializeField] private float slideStickSpeed;
     [SerializeField] private float slideRotationSpeed;
     [SerializeField] private float slideAcceleration;
     [SerializeField] private float slideJumpForce;
@@ -84,7 +84,6 @@ public class PlayerController : Player.PlayerComponent
 
     private bool WallCollision                  { get; set; }
     private Vector3 WallNormal                  { get; set; }
-    private Vector3 WallPoint                   { get; set; }
 
     private float Size {
         get { 
@@ -350,7 +349,6 @@ public class PlayerController : Player.PlayerComponent
             {
                 WallCollision  = true;
                 WallNormal     = hit.normal;
-                WallPoint      = hit.point;
                 return;
             }
         }
@@ -403,6 +401,11 @@ public class PlayerController : Player.PlayerComponent
             context.slideBoost = true;
             stickVel = Vector3.zero;
             velFix   = 0;
+        }
+
+        public override void Update()
+        {
+            context.playerCamera.ViewTilt();
         }
 
         public override void FixedUpdate() {
@@ -502,16 +505,23 @@ public class PlayerController : Player.PlayerComponent
             // Gaining momentum
             if (context.SlopeCollision) {
                 // Get the gravity, angle, and current momentumDirection
-                Vector3 slopeGravity       = Vector3.ProjectOnPlane(Vector3.down * (context.gravity + increasedValue), context.GroundNormal);
+                Vector3 slopeGravity       = Vector3.ProjectOnPlane(context.gravity * increasedValue * Vector3.down, context.GroundNormal);
                 Vector3 momentumDirection  = momentum.normalized;
                 float angle                = Vector3.Angle(Vector3.up, context.GroundNormal);
-                float newMomentumMagnitude = Mathf.Max(1, momentum.magnitude - angle);
+                float newMomentumMagnitude = momentum.magnitude;
                 
                 // Ez
                 desiredVelocity = momentumDirection * newMomentumMagnitude + slopeGravity;
-                increasedValue  = Mathf.Abs(new Vector2(context.rb.velocity.x, context.rb.velocity.z).magnitude) < context.moveSpeed 
-                    ? 1
-                    : increasedValue + (context.slideSlopeMomentumGain * (angle / 90) * Time.fixedDeltaTime);
+
+                if (context.rb.velocity.magnitude < context.moveSpeed)
+                {
+                    increasedValue = 1;
+                }
+                else
+                {
+                    float angleNormalized = angle / 90.0f;
+                    increasedValue       += context.slideSlopeMomentumGain * angleNormalized * Time.fixedDeltaTime; 
+                }
             }
             else {
                 desiredVelocity  = context.ViewPositionNoY;
@@ -602,6 +612,8 @@ public class PlayerController : Player.PlayerComponent
             }
 
             prevForward = context.WallNormal;
+
+            context.playerCamera.WallRunRotate(context.WallNormal);
         }
 
         public override void FixedUpdate() {
