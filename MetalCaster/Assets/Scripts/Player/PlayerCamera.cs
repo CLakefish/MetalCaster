@@ -21,6 +21,7 @@ public class PlayerCamera : Player.PlayerComponent
 
     [Header("Slide Pulse")]
     [SerializeField] private AnimCurve fovPulse;
+    [SerializeField] private float slideAngle;
 
     [Header("View Tilting")]
     [SerializeField] private float viewTiltAngle;
@@ -88,9 +89,19 @@ public class PlayerCamera : Player.PlayerComponent
         desiredZRotation = wallRunAngle * -Mathf.Sign(Vector3.SignedAngle(CameraForwardNoY, normal, Vector3.up)) * (1.0f - Mathf.Abs(Vector3.Dot(normal, CameraForward)));
     }
 
+    public void SlideRotate(Vector3 difference)
+    {
+        desiredZRotation = slideAngle;
+    }
+
     public void ViewTilt()
     {
         viewTilt.x = -playerInput.Input.x * viewTiltAngle;
+    }
+
+    public void Rotate(float deg)
+    {
+        desiredZRotation += deg;
     }
 
     private void Start()
@@ -102,10 +113,11 @@ public class PlayerCamera : Player.PlayerComponent
 
     private void Update()
     {
-        mouseRotation.x = Mathf.Clamp(mouseRotation.x - playerInput.AlteredMousePosition.y, -89f, 89f);
+        mouseRotation.x  = Mathf.Clamp(mouseRotation.x - playerInput.AlteredMousePosition.y, -89f, 89f);
         mouseRotation.y += playerInput.AlteredMousePosition.x;
 
         float currentZ   = Mathf.SmoothDampAngle(camera.transform.localEulerAngles.z, desiredZRotation + viewTilt.x, ref cameraVel, viewRotationSmoothing);
+
         desiredZRotation = 0;
         viewTilt         = Vector2.zero;
 
