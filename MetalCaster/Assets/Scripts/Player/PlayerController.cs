@@ -61,8 +61,8 @@ public class PlayerController : Player.PlayerComponent
     [Header("Wall Run Parameters")]
     [SerializeField] private float wallRunSpeed;
     [SerializeField] private float wallRunMaxAngle = 80f;
-    [SerializeField] private float wallRunRotationSpeed;
     [SerializeField] private float wallRunRotateGraceTime;
+    [SerializeField] private float wallRunGravity;
 
     [Header("Wall Jump Parameters")]
     [SerializeField] private float wallJumpForce;
@@ -72,7 +72,7 @@ public class PlayerController : Player.PlayerComponent
     [SerializeField] private float wallJumpMinDot  = 0.25f;
     [SerializeField] private float wallJumpKickDot = -0.8f;
 
-    private readonly float groundCastRad = 0.45f;
+    private readonly float groundCastRad = 0.30f;
     private readonly float raycastMargin = 0.1f;
     private readonly float floorStickThreshold = 0.05f;
 
@@ -200,11 +200,10 @@ public class PlayerController : Player.PlayerComponent
             new(Grounded, Falling,   () => !GroundCollision),
             new(Grounded, SlideJump, () => Input.GetKeyDown(KeyCode.Space)   && PreviousState == Sliding && hfsm.Duration < coyoteTime),
             new(Grounded, Jumping,   () => Input.GetKeyDown(KeyCode.Space)   || jumpBufferTime > 0),
-            new(Grounded, Sliding,   () => Input.GetKey(KeyCode.LeftControl) && playerInput.IsInputting),
-            new(Grounded, Crouching, () => Input.GetKey(KeyCode.LeftControl) && !playerInput.IsInputting),
+            new(Grounded, Sliding,   () => Input.GetKey(KeyCode.LeftControl)),
 
             // Jumping transitions   
-            new(Jumping, Falling,    () => rb.velocity.y < 0 && hfsm.Duration >= minJumpTime),
+            new(Jumping, Falling,    () => rb.velocity.y <= 0 && hfsm.Duration >= minJumpTime),
             new(Jumping, WallRun,    () => WallCollision && AllowWallRun && hfsm.Duration >= minJumpTime),
 
             // Falling transitions   
@@ -213,7 +212,8 @@ public class PlayerController : Player.PlayerComponent
             new(Falling, Sliding,    () => Input.GetKey(KeyCode.LeftControl)  && GroundCollision),
             new(Falling, Grounded,   () => !Input.GetKey(KeyCode.LeftControl) && GroundCollision),
             new(Falling, WallRun,    () => WallCollision && !GroundCollision  && AllowWallRun),
-            new(Falling, WallJump,   () => Input.GetKeyDown(KeyCode.Space)    && PreviousState == WallRun  && hfsm.Duration < wallJumpCoyoteTime),
+            new(Falling, WallJump,   () => Input.GetKeyDown(KeyCode.Space) && WallCollision && !GroundCollision),
+            new(Falling, WallJump,   () => Input.GetKeyDown(KeyCode.Space) && PreviousState == WallRun  && hfsm.Duration < wallJumpCoyoteTime),
 
             new(Crouching, Grounded, () => !Input.GetKey(KeyCode.LeftControl) && CanUncrouch),
             new(Crouching, Falling,  () => !GroundCollision && CanUncrouch),
@@ -413,16 +413,14 @@ public class PlayerController : Player.PlayerComponent
         public GroundedState(PlayerController context) : base(context) { }
 
         public override void Enter() {
-            if (!Input.GetKey(KeyCode.LeftControl) && context.PreviousState == context.Falling)
-            {
+            if (!Input.GetKey(KeyCode.LeftControl) && context.PreviousState == context.Falling) {
                 context.playerCamera.JumpBob();
             }
 
             context.slideBoost = true;
         }
 
-        public override void Update()
-        {
+        public override void Update() {
             context.playerCamera.ViewTilt();
         }
 
@@ -437,7 +435,9 @@ public class PlayerController : Player.PlayerComponent
         public FallingState(PlayerController context) : base(context) { }
 
         public override void Update() {
-            if (Input.GetKeyDown(KeyCode.Space)) context.jumpBufferTime = context.jumpBuffer;
+            if (Input.GetKeyDown(KeyCode.Space)) {
+                context.jumpBufferTime = context.jumpBuffer;
+            }
         }
 
         public override void FixedUpdate() => context.Move(context.moveSpeed, true);
@@ -477,26 +477,25 @@ public class PlayerController : Player.PlayerComponent
         public SlidingState(PlayerController context) : base(context) { }
 
         public override void Enter() {
-            if (context.slideBoost) {
+            momentum = context.rb.velocity;
+
+            if (context.slideBoost && Vector3.Dot(context.ViewPositionNoY, context.GroundNormal) >= 0) {
                 context.playerCamera.FOVPulse();
 
-                Vector3 dir = (context.ViewPositionNoY * context.slideForce) + (context.gravity * Time.fixedDeltaTime * Vector3.down);
-
-                if (context.SlopeCollision) momentum = Quaternion.FromToRotation(Vector3.up, context.GroundNormal) * dir;
-                else momentum = dir;
-            }
-            else {
-                momentum = context.rb.velocity;
+                if (context.SlopeCollision) {
+                    Vector3 dir = (context.ViewPositionNoY * context.slideForce) + (context.gravity * Time.fixedDeltaTime * Vector3.down);
+                    momentum    = Quaternion.FromToRotation(Vector3.up, context.GroundNormal) * dir;
+                }
+                else {
+                    momentum = context.ViewPositionNoY * context.slideForce;
+                }
             }
 
             context.DesiredVelocity = new Vector2(momentum.x, momentum.z);
             context.slideBoost      = false;
         }
 
-        public override void Update()
-        {
-            context.playerCamera.WallRunRotate(momentum - context.playerCamera.CameraForwardNoY);
-        }
+        public override void Update() => context.playerCamera.SlideRotate(momentum);
 
         public override void FixedUpdate() {
             Vector3 desiredVelocity;
@@ -537,8 +536,9 @@ public class PlayerController : Player.PlayerComponent
 
                     momentum = interpolated * momentum;
 
-                    if (Vector3.Dot(momentum, slopeDirection) <= 0 && context.SlopeCollision) 
+                    if (Vector3.Dot(momentum, slopeDirection) <= 0 && context.SlopeCollision) {
                         momentum = Vector3.ProjectOnPlane(momentum, context.GroundNormal);
+                    }
                 }
             }
 
@@ -559,7 +559,9 @@ public class PlayerController : Player.PlayerComponent
         }
 
         public override void Update() {
-            if (Input.GetKeyDown(KeyCode.Space)) context.jumpBufferTime = context.jumpBuffer;
+            if (Input.GetKeyDown(KeyCode.Space)) {
+                context.jumpBufferTime = context.jumpBuffer;
+            }
         }
 
         public override void FixedUpdate() => context.Move(context.moveSpeed, true);
@@ -577,33 +579,36 @@ public class PlayerController : Player.PlayerComponent
         public WallRunning(PlayerController context) : base(context) { }
 
         public override void Enter() {
-            Vector3 dir = Quaternion.FromToRotation(Vector3.up, context.WallNormal) * new Vector3(context.rb.velocity.x, 0, context.rb.velocity.z);
-            float tempY = Mathf.Max(context.rb.velocity.y, 0);
+            Vector3 initialDir = new(context.rb.velocity.x, 0, context.rb.velocity.z);
 
-            context.rb.velocity     = new Vector3(dir.x, tempY, dir.z);
+            if (initialDir.magnitude == 0) {
+                initialDir = context.WallNormal;
+            }
+
+            Vector3 rotatedDir      = Quaternion.FromToRotation(Vector3.up, context.WallNormal) * initialDir;
+            float tempY             = Mathf.Max(context.rb.velocity.y, 0);
+
+            context.rb.velocity     = new Vector3(rotatedDir.x, tempY, rotatedDir.z);
             context.DesiredVelocity = new Vector2(context.rb.velocity.x, context.rb.velocity.z);
 
             prevForward = context.WallNormal;
-            targetY = context.rb.transform.localEulerAngles.y;
-            rotateVel = 0;
+            targetY     = context.rb.transform.localEulerAngles.y;
+            rotateVel   = 0;
         }
 
         public override void Update() {
 
-            if (context.playerInput.MousePosition == Vector2.zero && context.hfsm.Duration > context.wallRunRotateGraceTime)
-            {
-                float y = Mathf.SmoothDampAngle(context.rb.transform.localEulerAngles.y, targetY, ref rotateVel, context.wallRunRotationSpeed);
+            if (context.playerInput.MousePosition == Vector2.zero && context.hfsm.Duration > context.wallRunRotateGraceTime) {
+                float y = Mathf.SmoothDampAngle(context.rb.transform.localEulerAngles.y, targetY, ref rotateVel, context.playerCamera.wallRunRotationSpeed);
 
                 context.rb.MoveRotation(Quaternion.Euler(new Vector3(0, y, 0)));
 
-                if (prevForward != context.WallNormal)
-                {
+                if (prevForward != context.WallNormal) {
                     float angle = Vector3.SignedAngle(prevForward, context.WallNormal, Vector3.up);
                     targetY += angle;
                 }
             }
-            else
-            {
+            else {
                 targetY = context.rb.transform.localEulerAngles.y;
             }
 
@@ -613,13 +618,13 @@ public class PlayerController : Player.PlayerComponent
         }
 
         public override void FixedUpdate() {
-            Vector3 projected   = GetProjected();
+            Vector3 projected = GetProjected();
+
+            if (projected.magnitude == 0) return;
 
             float downwardForce = context.rb.velocity.y > 0 
                 ? context.rb.velocity.y - (context.gravity * Time.fixedDeltaTime)
-                : 0;
-
-            if (projected.magnitude == 0) return;
+                : context.rb.velocity.y - (context.wallRunGravity * Time.fixedDeltaTime);
 
             context.DesiredVelocity = new Vector2(projected.x, projected.z);
             context.rb.velocity     = new Vector3(context.DesiredVelocity.x, downwardForce, context.DesiredVelocity.y);
@@ -655,7 +660,9 @@ public class PlayerController : Player.PlayerComponent
         }
 
         public override void Update() {
-            if (Input.GetKeyDown(KeyCode.Space)) context.jumpBufferTime = context.jumpBuffer;
+            if (Input.GetKeyDown(KeyCode.Space)) {
+                context.jumpBufferTime = context.jumpBuffer;
+            }
         }
     }
 

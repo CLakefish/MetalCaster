@@ -84,11 +84,11 @@ public class AnimationEditor : EditorWindow
 
         if (data != null)
         {
-            selectedData.ReassignNames();
-
             EditorGUI.DrawRect(new Rect(X_MARGIN, SPACING + HEIGHT + Y_MARGIN, position.width - (2.0f * X_MARGIN), HEIGHT), Color.blue);
-            ShowScrubber(data, e);
             DisplayAnimationData(data, e);
+
+            ShowScrubber(data, e);
+
             HandleDrops(data, e);
         }
 
@@ -156,7 +156,7 @@ public class AnimationEditor : EditorWindow
             currentProgression += (float)DT;
             currentProgression %= length;
 
-            selectedData.Play(currentProgression / length);
+            selectedData.Play(currentProgression / length, selectedAnimation);
 
             Repaint();
         }
@@ -177,25 +177,32 @@ public class AnimationEditor : EditorWindow
 
         if (selectedIndex >= 0 && selectedIndex < animationClips.Length)
         {
-            selectedAnimation = animationClips[selectedIndex];
+            if (animationClips[selectedIndex] != selectedAnimation) {
+                currentProgression = 0;
+            }
+
+            selectedAnimation  = animationClips[selectedIndex];
         }
 
-        if (selectedAnimation == null)
-        {
+        if (selectedAnimation == null) {
             EditorGUILayout.LabelField("No animation selected.");
             GUILayout.EndHorizontal();
             return;
         }
 
-        if (GUILayout.Button("Clear Animation Data", GUILayout.Width(BUTTON_WIDTH), GUILayout.Height(BUTTON_HEIGHT))) DeleteAssets();
+        if (GUILayout.Button("Clear Animation Data", GUILayout.Width(BUTTON_WIDTH), GUILayout.Height(BUTTON_HEIGHT))) {
+            DeleteAssets();
+            Repaint();
+        }
 
         string playingLabel = playing ? "Stop" : "Play";
-        if (GUILayout.Button(playingLabel, GUILayout.Width(BUTTON_WIDTH), GUILayout.Height(BUTTON_HEIGHT)))
-        {
+
+        if (GUILayout.Button(playingLabel, GUILayout.Width(BUTTON_WIDTH), GUILayout.Height(BUTTON_HEIGHT))) {
             playing = !playing;
             selectedData.ReloadData(selectedAnimation);
             lastTime = EditorApplication.timeSinceStartup;
             EditorUtility.SetDirty(selectedData);
+            Repaint();
         }
 
         GUILayout.EndHorizontal();
@@ -203,9 +210,9 @@ public class AnimationEditor : EditorWindow
 
     private string GenerateName()
     {
-        string name = "0";
+        string name = "1";
 
-        if (selectedData.Get(selectedAnimation) != null) name = selectedData.Get(selectedAnimation).Count.ToString();
+        if (selectedData.Get(selectedAnimation) != null) name = (selectedData.Get(selectedAnimation).Count + 1).ToString();
 
         return "AnimData" + name + ".asset";
     }
@@ -392,9 +399,11 @@ public class AnimationEditor : EditorWindow
 
                 case DragType.START_RESIZE:
                     animData.start = Mathf.Min(animData.start + deltaX, animData.end - 0.01f);
+                    //animData.start = Mathf.Clamp(animData.start, 0, (position.width - (X_MARGIN * 2.0f)) / Scale);
                     break;
 
                 case DragType.END_RESIZE:
+                    //animData.end = Mathf.Clamp(animData.end + deltaX, 0, (position.width - (X_MARGIN * 2.0f)) / Scale);
                     animData.end += deltaX;
                     break;
             }
@@ -452,9 +461,9 @@ public class AnimationEditor : EditorWindow
                     float deltaX = e.delta.x / Scale;
                     currentProgression += deltaX;
 
-                    currentProgression = Mathf.Clamp(currentProgression, 0, (position.width - (X_MARGIN * 2.0f)) * Scale);
+                    currentProgression = Mathf.Clamp(currentProgression, 0, (position.width - (X_MARGIN * 2.0f)) / Scale);
 
-                    selectedData.Play(currentProgression / selectedAnimation.length);
+                    selectedData.Play(currentProgression / selectedAnimation.length, selectedAnimation);
 
                     e.Use();
                     Repaint();

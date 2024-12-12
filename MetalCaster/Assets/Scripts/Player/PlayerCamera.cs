@@ -28,6 +28,7 @@ public class PlayerCamera : Player.PlayerComponent
 
     [Header("Wall Running")]
     [SerializeField] private float wallRunAngle;
+    [SerializeField] public float wallRunRotationSpeed;
 
     public Vector3 CameraForward { 
         get { 
@@ -89,9 +90,9 @@ public class PlayerCamera : Player.PlayerComponent
         desiredZRotation = wallRunAngle * -Mathf.Sign(Vector3.SignedAngle(CameraForwardNoY, normal, Vector3.up)) * (1.0f - Mathf.Abs(Vector3.Dot(normal, CameraForward)));
     }
 
-    public void SlideRotate(Vector3 difference)
+    public void SlideRotate(Vector3 normal)
     {
-        desiredZRotation = slideAngle;
+        desiredZRotation = slideAngle * -Mathf.Sign(Vector3.SignedAngle(CameraForwardNoY, normal.normalized, Vector3.up)) * (1.0f - Mathf.Abs(Vector3.Dot(normal.normalized, CameraForward)));
     }
 
     public void ViewTilt()
