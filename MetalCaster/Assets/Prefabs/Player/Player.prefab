@@ -404,8 +404,10 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
     speed: 1
+  slideAngle: 10
   viewTiltAngle: 2
   wallRunAngle: 12.5
+  wallRunRotationSpeed: 0.11
 --- !u!114 &3056770641862167720
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -419,21 +421,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rb: {fileID: 4561073770786325875}
-  collider: {fileID: 8169797701521591564}
+  col: {fileID: 8169797701521591564}
   layers:
     serializedVersion: 2
     m_Bits: 1
-  groundCastDist: 1.025
+  groundCastDist: 1.05
   fallingCastDist: 1
   wallCastIncrements: 8
   wallCastDistance: 0.6
-  interpolateNormalSpeed: 45
   moveSpeed: 12
   crouchSpeed: 5
   acceleration: 100
   deceleration: 100
   groundMomentumConserveTime: 0.15
-  groundStickSpeed: 0.05
+  groundStickSpeed: 0.1
   gravity: 46
   maxFallSpeed: -100
   jumpForce: 16
@@ -450,13 +451,13 @@ MonoBehaviour:
   crouchTime: 1.25
   wallRunSpeed: 14
   wallRunMaxAngle: 75
-  wallRunRotationSpeed: 0.075
   wallRunRotateGraceTime: 0.1
+  wallRunGravity: 3.5
   wallJumpForce: 18
   wallJumpHeight: 15
   wallJumpTime: 0.2
   wallJumpCoyoteTime: 0.2
-  wallJumpMinDot: 0.1
-  wallJumpKickDot: -0.85
+  wallJumpMinDot: 0.25
+  wallJumpKickDot: -0.8
   DebugFlySpeed: 10
   scrollWheelSpeed: 4

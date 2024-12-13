@@ -15,8 +15,8 @@ public class AnimationDataHolder : MonoBehaviour
 {
     public Animator Animator { get; private set; }
 
-    [SerializeField] private List<AnimationDataEntry> dataList  = new();
-    [SerializeField] private List<SceneReference> referenceList = new();
+    [HideInInspector, SerializeField] private List<AnimationDataEntry> dataList  = new();
+    [HideInInspector, SerializeField] private List<SceneReference> referenceList = new();
 
     private readonly Dictionary<AnimationClip, List<AnimationData>> dataDictionary      = new();
     private readonly Dictionary<string, GameObject>                 referenceDictionary = new();
@@ -33,6 +33,16 @@ public class AnimationDataHolder : MonoBehaviour
 
     private void Update() => CheckEvents();
 
+    public void EnableAll(AnimationClip clip) {
+        var list = Get(clip);
+
+        if (list == null) return;
+
+        foreach (var data in list) {
+            data.Reload();
+        }
+    }
+
     public void Assign(AnimationData data, Object obj)
     {
         data.HandleAssignment(obj);
@@ -40,8 +50,12 @@ public class AnimationDataHolder : MonoBehaviour
         if (obj is GameObject objTemp)
         {
             referenceList.Add(new SceneReference(objTemp));
-            referenceDictionary[objTemp.name] = objTemp;
+            SyncReferences();
         }
+
+#if UNITY_EDITOR
+        EditorUtility.SetDirty(this);
+#endif
     }
 
     public void Add(AnimationClip clip, AnimationData data)
@@ -50,7 +64,7 @@ public class AnimationDataHolder : MonoBehaviour
 
         for (int i = 0; i < dataList.Count; ++i)
         {
-            if (dataList[i].animation == clip)
+            if (dataList[i].animation.Equals(clip))
             {
                 dataList[i].data.Add(data);
                 found = true;
@@ -65,9 +79,9 @@ public class AnimationDataHolder : MonoBehaviour
                 animation = clip,
                 data = new() { data }
             });
-
-            SyncDictionary();
         }
+
+        SyncDictionary();
 
 #if UNITY_EDITOR
         EditorUtility.SetDirty(this);
@@ -111,21 +125,30 @@ public class AnimationDataHolder : MonoBehaviour
 
         SyncDictionary();
         SyncReferences();
+
+#if UNITY_EDITOR
+        EditorUtility.SetDirty(this);
+#endif
     }
 
     public void Clear(AnimationClip clip)
     {
-        // ReloadData(clip);
+        EnableAll(clip);
 
-        int index = dataList.FindIndex(data => data.animation == clip);
+        int index = dataList.FindIndex(indexData => indexData.animation == clip);
+
         if (index >= 0)
         {
             var data = dataList[index];
 
             foreach (var d in data.data)
             {
-                if (d.objRef != null && d.objRef.obj != null) d.objRef.obj.SetActive(true);
-                referenceList.RemoveAll(item => item.objectName.Equals(d.objRef.objectName));
+                if (d == null) continue;
+                if (d.objRef != null && d.objRef.obj != null)
+                {
+                    d.objRef.obj.SetActive(true);
+                    referenceList.RemoveAll(item => item.objectName.Equals(d.objRef.objectName));
+                }
             }
 
             data.data.Clear();
@@ -134,6 +157,10 @@ public class AnimationDataHolder : MonoBehaviour
 
         SyncDictionary();
         SyncReferences();
+
+#if UNITY_EDITOR
+        EditorUtility.SetDirty(this);
+#endif
     }
 
     public void ClearAll()
@@ -142,13 +169,10 @@ public class AnimationDataHolder : MonoBehaviour
         referenceList.Clear();
         SyncDictionary();
         SyncReferences();
-    }
 
-    public void ReloadData(AnimationClip clip)
-    {
-        var clips = Get(clip);
-
-        foreach (var c in clips) c.Reload();
+#if UNITY_EDITOR
+        EditorUtility.SetDirty(this);
+#endif
     }
 
     public void SyncDictionary()

@@ -5,18 +5,16 @@ using System;
 using System.Collections;
 
 // Made by Carson Lakefish
-// Concept recommendations by Oliver Beebe
+// Concept recommendations and help by Oliver Beebe
 
 // TODO:
-// - Slide stick
-// - Slide view tilt
 // - GUNS
 
 public class PlayerController : Player.PlayerComponent
 {
     [Header("References")]
     [SerializeField] public Rigidbody rb;
-    [SerializeField] public CapsuleCollider collider;
+    [SerializeField] public CapsuleCollider col;
 
     [Header("Collisions")]
     [SerializeField] private LayerMask layers;
@@ -24,7 +22,6 @@ public class PlayerController : Player.PlayerComponent
     [SerializeField] private float fallingCastDist        = 0.6f;
     [SerializeField] private int wallCastIncrements       = 1;
     [SerializeField] private float wallCastDistance       = 1;
-    [SerializeField] private float interpolateNormalSpeed = 35;
 
     [Header("Walking Parameters")]
     [SerializeField] private float moveSpeed;
@@ -72,11 +69,10 @@ public class PlayerController : Player.PlayerComponent
     [SerializeField] private float wallJumpMinDot  = 0.25f;
     [SerializeField] private float wallJumpKickDot = -0.8f;
 
-    private readonly float groundCastRad = 0.30f;
-    private readonly float raycastMargin = 0.1f;
+    private readonly float groundCastRad       = 0.40f;
+    private readonly float raycastMargin       = 0.1f;
     private readonly float floorStickThreshold = 0.05f;
-
-    private readonly float slideDotMin = -0.25f;
+    private readonly float slideDotMin         = -0.25f;
 
     private bool GroundCollision                { get; set; }
     private bool SlopeCollision                 { get; set; }
@@ -88,13 +84,13 @@ public class PlayerController : Player.PlayerComponent
 
     private float Size {
         get { 
-            return collider.height; 
+            return col.height; 
         }
         set {
-            float start = collider.height;
+            float start = col.height;
             float hD    = value - start;
 
-            collider.height += hD;
+            col.height += hD;
             if (GroundCollision) rb.MovePosition(rb.position + Vector3.up * hD / 2.0f);
         }
     }
@@ -103,7 +99,7 @@ public class PlayerController : Player.PlayerComponent
     {
         get
         {
-            return !Physics.Raycast(rb.transform.position, Vector3.up, Size / 2.0f + 0.1f, layers);
+            return !Physics.SphereCast(rb.transform.position, col.radius, Vector3.up, out RaycastHit _, 1.1f, layers);
         }
     }
 
@@ -161,7 +157,6 @@ public class PlayerController : Player.PlayerComponent
     private FallingState   Falling   { get; set; }
     private JumpingState   Jumping   { get; set; }
     private SlidingState   Sliding   { get; set; }
-    private CrouchingState Crouching { get; set; }
     private SlideJumping   SlideJump { get; set; }
     private WallRunning    WallRun   { get; set; }
     private WallJumping    WallJump  { get; set; }
@@ -171,8 +166,6 @@ public class PlayerController : Player.PlayerComponent
     private bool slideBoost = true;
 
     private float jumpBufferTime = 0;
-    private Vector3 stickVel;
-    private float velFix;
 
 
     private void OnEnable()
@@ -187,7 +180,6 @@ public class PlayerController : Player.PlayerComponent
         WallRun    = new(this);
         WallJump   = new(this);
         SlideJump  = new(this);
-        Crouching  = new(this);
 
 #if UNITY_EDITOR
         DebugFly   = new(this);
@@ -215,19 +207,15 @@ public class PlayerController : Player.PlayerComponent
             new(Falling, WallJump,   () => Input.GetKeyDown(KeyCode.Space) && WallCollision && !GroundCollision),
             new(Falling, WallJump,   () => Input.GetKeyDown(KeyCode.Space) && PreviousState == WallRun  && hfsm.Duration < wallJumpCoyoteTime),
 
-            new(Crouching, Grounded, () => !Input.GetKey(KeyCode.LeftControl) && CanUncrouch),
-            new(Crouching, Falling,  () => !GroundCollision && CanUncrouch),
-            new(Crouching, Jumping,  () => Input.GetKeyDown(KeyCode.Space) && CanUncrouch),
-
             // Sliding transitions   
             new(Sliding, SlideJump,  () => Input.GetKeyDown(KeyCode.Space) || jumpBufferTime > 0),
             new(Sliding, Falling,    () => !GroundCollision && !SlopeCollision),
             new(Sliding, Grounded,   () => !Input.GetKey(KeyCode.LeftControl) && GroundCollision),
-            new(Sliding, Crouching,  () => !Input.GetKey(KeyCode.LeftControl) && !CanUncrouch),
 
             // Slide jump transitions
             new(SlideJump, Falling,  () => (!Input.GetKey(KeyCode.LeftControl)) || (rb.velocity.y < 0 && hfsm.Duration > 0)),
-            new(SlideJump, Grounded, () => GroundCollision && hfsm.Duration >= minJumpTime),
+            new(SlideJump, Grounded, () => !Input.GetKey(KeyCode.LeftControl) && GroundCollision && hfsm.Duration >= minJumpTime),
+            new(SlideJump, Sliding,  () => Input.GetKey(KeyCode.LeftControl)  && GroundCollision && hfsm.Duration >= minJumpTime),
 
             // Wall run transitions
             new(WallRun, WallJump,   () => Input.GetKeyDown(KeyCode.Space) || jumpBufferTime > 0),
@@ -259,7 +247,7 @@ public class PlayerController : Player.PlayerComponent
         hfsm.CheckTransitions();
         hfsm.Update();
 
-        ChangeSize(Input.GetKey(KeyCode.LeftControl) ? crouchSize : standardSize);
+        ChangeSize(Input.GetKey(KeyCode.LeftControl) || !CanUncrouch ? crouchSize : standardSize);
     }
 
     private void FixedUpdate()
@@ -294,7 +282,7 @@ public class PlayerController : Player.PlayerComponent
 
         Vector3 setVelocity = new (DesiredVelocity.x, rb.velocity.y, DesiredVelocity.y);
 
-        if (SlopeCollision && (CurrentState == Grounded || CurrentState == Crouching)) {
+        if (SlopeCollision && CurrentState == Grounded) {
             setVelocity.y = 0;
             setVelocity   = Quaternion.FromToRotation(Vector3.up, GroundNormal) * setVelocity;
         }
@@ -391,25 +379,12 @@ public class PlayerController : Player.PlayerComponent
         Size = endSize;
     }
 
-    private void GroundStick()
-    {
-        float halfSize = Size / 2.0f;
-        float yPos     = Position.y - halfSize - GroundPoint.y;
-        float yCheck   = floorStickThreshold;
-
-        // Floor sticking/Ground correction
-        if (yPos > yCheck)
-        {
-            Position = Vector3.SmoothDamp(Position, new Vector3(Position.x, GroundPoint.y + halfSize, Position.z), ref stickVel, groundStickSpeed, Mathf.Infinity, Time.fixedDeltaTime);
-        }
-
-        rb.velocity = new Vector3(rb.velocity.x, 0, rb.velocity.z);
-    }
-
     #region Standard_States
 
     private class GroundedState : State<PlayerController>
     {
+        private Vector3 stickVel;
+
         public GroundedState(PlayerController context) : base(context) { }
 
         public override void Enter() {
@@ -418,6 +393,7 @@ public class PlayerController : Player.PlayerComponent
             }
 
             context.slideBoost = true;
+            stickVel = Vector3.zero;
         }
 
         public override void Update() {
@@ -425,7 +401,22 @@ public class PlayerController : Player.PlayerComponent
         }
 
         public override void FixedUpdate() {
-            context.GroundStick();
+            float halfSize = context.Size / 2.0f;
+            float yPos = context.Position.y - halfSize - context.GroundPoint.y;
+            float yCheck = context.floorStickThreshold;
+
+            Vector3 targetPos = new(context.Position.x, context.GroundPoint.y + halfSize, context.Position.z);
+
+            // Smooth ground correction using RB
+            if (yPos > yCheck)
+            {
+                Vector3 currentPos = context.rb.position;
+                Vector3 smoothPos = Vector3.SmoothDamp(currentPos, targetPos, ref stickVel, context.groundStickSpeed, Mathf.Infinity, Time.fixedDeltaTime);
+                context.rb.MovePosition(smoothPos);
+            }
+
+            context.rb.velocity = new Vector3(context.rb.velocity.x, 0, context.rb.velocity.z);
+
             context.Move(context.moveSpeed, context.hfsm.Duration < context.groundMomentumConserveTime);
         }
     }
@@ -460,16 +451,6 @@ public class PlayerController : Player.PlayerComponent
 
     #region Sliding_States
 
-    private class CrouchingState : State<PlayerController>
-    {
-        public CrouchingState(PlayerController context) : base(context) { }
-
-        public override void FixedUpdate() {
-            context.GroundStick();
-            context.Move(context.crouchSpeed, false);
-        }
-    }
-
     private class SlidingState : State<PlayerController>
     {
         private Vector3 momentum;
@@ -479,7 +460,7 @@ public class PlayerController : Player.PlayerComponent
         public override void Enter() {
             momentum = context.rb.velocity;
 
-            if (context.slideBoost && Vector3.Dot(context.ViewPositionNoY, context.GroundNormal) >= 0) {
+            if (context.slideBoost) {
                 context.playerCamera.FOVPulse();
 
                 if (context.SlopeCollision) {
@@ -579,16 +560,17 @@ public class PlayerController : Player.PlayerComponent
         public WallRunning(PlayerController context) : base(context) { }
 
         public override void Enter() {
-            Vector3 initialDir = new(context.rb.velocity.x, 0, context.rb.velocity.z);
+            Vector3 temp = new(context.rb.velocity.x, 0, context.rb.velocity.z);
+            float tempY  = Mathf.Max(context.rb.velocity.y, 0);
 
-            if (initialDir.magnitude == 0) {
-                initialDir = context.WallNormal;
+            if (temp.magnitude == 0) {
+                temp = context.WallNormal;
+            }
+            else {
+                temp = Quaternion.FromToRotation(Vector3.up, context.WallNormal) * temp;
             }
 
-            Vector3 rotatedDir      = Quaternion.FromToRotation(Vector3.up, context.WallNormal) * initialDir;
-            float tempY             = Mathf.Max(context.rb.velocity.y, 0);
-
-            context.rb.velocity     = new Vector3(rotatedDir.x, tempY, rotatedDir.z);
+            context.rb.velocity     = new Vector3(temp.x, tempY, temp.z);
             context.DesiredVelocity = new Vector2(context.rb.velocity.x, context.rb.velocity.z);
 
             prevForward = context.WallNormal;
@@ -620,7 +602,7 @@ public class PlayerController : Player.PlayerComponent
         public override void FixedUpdate() {
             Vector3 projected = GetProjected();
 
-            if (projected.magnitude == 0) return;
+            if (new Vector3(projected.x, 0, projected.z).magnitude == 0) return;
 
             float downwardForce = context.rb.velocity.y > 0 
                 ? context.rb.velocity.y - (context.gravity * Time.fixedDeltaTime)

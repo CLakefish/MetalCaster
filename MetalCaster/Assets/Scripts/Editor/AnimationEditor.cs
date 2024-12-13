@@ -18,7 +18,7 @@ public class AnimationEditor : EditorWindow
     private AnimationClip selectedAnimation;
     private Animator selectedAnimator;
 
-    private const float HEIGHT   = 25;
+    private const float HEIGHT   = 30;
     private const float SPACING  = 5;
     private const float X_MARGIN = 10;
     private const float Y_MARGIN = 25;
@@ -27,7 +27,7 @@ public class AnimationEditor : EditorWindow
     private const float BUTTON_HEIGHT = 25;
 
     private const float SCRUB_HEIGHT = 10;
-    private const float SCRUB_WIDTH  = 40;
+    private const float SCRUB_WIDTH  = 20;
 
     private const float EDGE_THRESHOLD = 10;
 
@@ -38,6 +38,15 @@ public class AnimationEditor : EditorWindow
 
     private bool playing   = false;
     private bool scrubbing = false;
+    private Vector2 prevMousePos;
+
+    private float MaxX
+    {
+        get
+        {
+            return (position.width - (X_MARGIN * 2.0f)) / Scale; 
+        }
+    }
 
     private float Scale
     {
@@ -53,6 +62,7 @@ public class AnimationEditor : EditorWindow
     private void OnEnable()
     {
         EditorApplication.update += UpdateAnimatorProgression;
+        EditorApplication.quitting += () => { if (selectedData != null) selectedData.EnableAll(selectedAnimation); };
         lastTime = EditorApplication.timeSinceStartup;
     }
 
@@ -60,12 +70,19 @@ public class AnimationEditor : EditorWindow
 
     private void OnSelectionChange()
     {
+        if (selectedData != null) selectedData.EnableAll(selectedAnimation);
+
         GetSelection();
 
         if (Selection.activeGameObject == null) return;
 
         Repaint();
         UpdateAnimatorProgression();
+    }
+
+    private void OnLostFocus()
+    {
+        if (selectedData != null) selectedData.EnableAll(selectedAnimation);
     }
 
     private void OnGUI()
@@ -84,7 +101,15 @@ public class AnimationEditor : EditorWindow
 
         if (data != null)
         {
-            EditorGUI.DrawRect(new Rect(X_MARGIN, SPACING + HEIGHT + Y_MARGIN, position.width - (2.0f * X_MARGIN), HEIGHT), Color.blue);
+            ShowTicks();
+
+            EditorGUI.DrawRect(new Rect(
+                X_MARGIN, 
+                HEIGHT + Y_MARGIN, 
+                position.width - (2.0f * X_MARGIN), 
+                HEIGHT), 
+                Color.blue);
+
             DisplayAnimationData(data, e);
 
             ShowScrubber(data, e);
@@ -127,10 +152,10 @@ public class AnimationEditor : EditorWindow
 
         menu.AddSeparator("");
 
-        menu.AddItem(new GUIContent("Create Game Object Animation Data"), false,     () => CreateAnimationDataAsset<GameObjectAnimationData>());
-        menu.AddItem(new GUIContent("Create Sound Effect Animation Data"), false,    () => CreateAnimationDataAsset<SoundEffectAnimationData>());
-        menu.AddItem(new GUIContent("Create Unity Event Animation Data"), false,     () => CreateAnimationDataAsset<UnityEventAnimationData>());
-        menu.AddItem(new GUIContent("Create Particle System Animation Data"), false, () => CreateAnimationDataAsset<ParticleSystemAnimationData>());
+        menu.AddItem(new GUIContent("Create Game Object Animation Data"), false,     () => AddAsset<GameObjectAnimationData>());
+        menu.AddItem(new GUIContent("Create Sound Effect Animation Data"), false,    () => AddAsset<SoundEffectAnimationData>());
+        menu.AddItem(new GUIContent("Create Unity Event Animation Data"), false,     () => AddAsset<UnityEventAnimationData>());
+        menu.AddItem(new GUIContent("Create Particle System Animation Data"), false, () => AddAsset<ParticleSystemAnimationData>());
 
         menu.AddSeparator("");
 
@@ -192,16 +217,13 @@ public class AnimationEditor : EditorWindow
 
         if (GUILayout.Button("Clear Animation Data", GUILayout.Width(BUTTON_WIDTH), GUILayout.Height(BUTTON_HEIGHT))) {
             DeleteAssets();
-            Repaint();
         }
 
         string playingLabel = playing ? "Stop" : "Play";
 
         if (GUILayout.Button(playingLabel, GUILayout.Width(BUTTON_WIDTH), GUILayout.Height(BUTTON_HEIGHT))) {
-            playing = !playing;
-            selectedData.ReloadData(selectedAnimation);
+            playing  = !playing;
             lastTime = EditorApplication.timeSinceStartup;
-            EditorUtility.SetDirty(selectedData);
             Repaint();
         }
 
@@ -210,14 +232,10 @@ public class AnimationEditor : EditorWindow
 
     private string GenerateName()
     {
-        string name = "1";
-
-        if (selectedData.Get(selectedAnimation) != null) name = (selectedData.Get(selectedAnimation).Count + 1).ToString();
-
-        return "AnimData" + name + ".asset";
+        return "AnimData" + DateTime.Now.Ticks + ".asset";
     }
 
-    private void AddAsset<T>(T obj, string name) where T : AnimationData
+    private void AddAsset<T>() where T : AnimationData
     {
         if (selectedAnimation == null)
         {
@@ -237,14 +255,15 @@ public class AnimationEditor : EditorWindow
         string animPath      = $"{folderPath}/{animationName}";
         if (!AssetDatabase.IsValidFolder(animPath)) AssetDatabase.CreateFolder(folderPath, animationName);
 
-        AssetDatabase.CreateAsset(obj, animPath + "/" + name);
+        T data = CreateInstance<T>();
+        string name = GenerateName();
+        data.Init(0, 1, name);
+
+        AssetDatabase.CreateAsset(data, animPath + "/" + name);
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        selectedData.Add(selectedAnimation, obj);
-
-        EditorUtility.SetDirty(selectedData);
-        EditorUtility.SetDirty(obj);
+        selectedData.Add(selectedAnimation, data);
     }
 
     private void DeleteAsset(string name)
@@ -275,6 +294,8 @@ public class AnimationEditor : EditorWindow
 
     private void DeleteAssets()
     {
+        selectedData.Clear(selectedAnimation);
+
         string objectName    = selected.name;
         string animationName = selectedAnimation.name;
         string fullPath      = $"Assets/Animation Data/{objectName}/{animationName}";
@@ -297,8 +318,7 @@ public class AnimationEditor : EditorWindow
             AssetDatabase.DeleteAsset(fullPath);
         }
 
-        selectedData.Clear(selectedAnimation);
-        EditorUtility.SetDirty(selectedData);
+        AssetDatabase.Refresh();
     }
 
     private void HandleDrops(List<AnimationData> data, Event e)
@@ -335,16 +355,27 @@ public class AnimationEditor : EditorWindow
 
         for (int i = 0; i < data.Count; ++i)
         {
+            if (data[i] == null) continue;
+
             float start = data[i].start * Scale;
             float end   = data[i].end * Scale;
             float width = Mathf.Abs(end - start);
 
-            Rect rect = new(X_MARGIN + start, (SPACING + HEIGHT) * (i + 1) + SPACING + BUTTON_HEIGHT + Y_MARGIN, width, HEIGHT);
-            Rect bg   = new(X_MARGIN, (SPACING + HEIGHT) * (i + 1) + SPACING + BUTTON_HEIGHT + Y_MARGIN, position.width - (X_MARGIN * 2), HEIGHT);
+            Rect rect = new(
+                X_MARGIN + start, 
+                (SPACING + HEIGHT) * (i + 1) + BUTTON_HEIGHT + SPACING + Y_MARGIN,
+                width, 
+                HEIGHT);
+
+            Rect bg   = new(
+                X_MARGIN, 
+                (SPACING + HEIGHT) * (i + 1) + BUTTON_HEIGHT + SPACING + Y_MARGIN, 
+                position.width - (X_MARGIN * 2), 
+                HEIGHT);
 
             EditorGUI.DrawRect(bg,   new Color(0,0,0,0.25f));
             EditorGUI.DrawRect(rect, data[i].Visual());
-            EditorGUI.LabelField(rect, data[i].name, new GUIStyle(GUIStyle.none) { normal = new GUIStyleState() { textColor = Color.black } });
+            EditorGUI.LabelField(rect, data[i].GetType().Name, new GUIStyle(GUIStyle.none) { normal = new GUIStyleState() { textColor = Color.black } });
 
             if (rect.Contains(mousePos))
             {
@@ -383,33 +414,36 @@ public class AnimationEditor : EditorWindow
             switch (dragType)
             {
                 case DragType.DRAGGING:
-                    if (animData.start + deltaX >= 0)
+
+                    if (animData.start + deltaX >= 0 && animData.end + deltaX < MaxX)
                     {
                         animData.start += deltaX;
-                        animData.end += deltaX;
+                        animData.end   += deltaX;
                     }
-                    else
+                    else if (animData.start + deltaX >= 0 && animData.end + deltaX >= MaxX)
                     {
-                        float diff = deltaX + animData.start;
-
-                        animData.start = 0;
-                        animData.end += deltaX - diff;
+                        animData.end = MaxX;
                     }
+                    else if (animData.start + deltaX < 0 && animData.end + deltaX < MaxX)
+                    {
+                        animData.start = 0;
+                    }
+
                     break;
 
                 case DragType.START_RESIZE:
                     animData.start = Mathf.Min(animData.start + deltaX, animData.end - 0.01f);
-                    //animData.start = Mathf.Clamp(animData.start, 0, (position.width - (X_MARGIN * 2.0f)) / Scale);
+                    animData.start = Mathf.Clamp(animData.start, 0, MaxX);
                     break;
 
                 case DragType.END_RESIZE:
-                    //animData.end = Mathf.Clamp(animData.end + deltaX, 0, (position.width - (X_MARGIN * 2.0f)) / Scale);
-                    animData.end += deltaX;
+                    animData.end = Mathf.Clamp(animData.end + deltaX, 0, MaxX);
                     break;
             }
 
             EditorUtility.SetDirty(animData);
-            EditorUtility.SetDirty(selectedData);
+
+            prevMousePos = e.mousePosition;
 
             Repaint();
             e.Use();
@@ -461,7 +495,7 @@ public class AnimationEditor : EditorWindow
                     float deltaX = e.delta.x / Scale;
                     currentProgression += deltaX;
 
-                    currentProgression = Mathf.Clamp(currentProgression, 0, (position.width - (X_MARGIN * 2.0f)) / Scale);
+                    currentProgression = Mathf.Clamp(currentProgression, 0, MaxX);
 
                     selectedData.Play(currentProgression / selectedAnimation.length, selectedAnimation);
 
@@ -474,20 +508,48 @@ public class AnimationEditor : EditorWindow
                 if (scrubbing && e.button == 0)
                 {
                     scrubbing = false;
-                    selectedData.ReloadData(selectedAnimation);
                     e.Use();
                 }
                 break;
         }
     }
 
-    private void CreateAnimationDataAsset<T>() where T : AnimationData
+    private void ShowTicks()
     {
-        T data = CreateInstance<T>();
+        int totalTicks     = Mathf.FloorToInt(MaxX);
+        int totalDivisions = 10;
 
-        string name = GenerateName();
-        data.Init(0, 1, name);
-        AddAsset(data, name);
+        Rect up = new(
+            new Vector2(X_MARGIN, Y_MARGIN + SCRUB_HEIGHT),
+            new Vector2(position.size.x - (X_MARGIN * 2.0f), 1));
+
+        Rect down = new(
+            new Vector2(X_MARGIN, position.size.y - Y_MARGIN + SCRUB_HEIGHT),
+            new Vector2(position.size.x - (X_MARGIN * 2.0f), 1));
+
+        EditorGUI.DrawRect(up,   new Color(1, 1, 1, 0.25f));
+        EditorGUI.DrawRect(down, new Color(1, 1, 1, 0.25f));
+
+        for (int i = 0; i <= totalTicks; i++)
+        {
+            for (int j = 0; j < totalDivisions; ++j)
+            {
+                float newPos = i + (j / 10.0f);
+
+                Rect subTick = new(
+                    new Vector2(X_MARGIN + (newPos * Scale), Y_MARGIN + SCRUB_HEIGHT),
+                    new Vector2(1, position.size.y - (Y_MARGIN * 2.0f)));
+
+                EditorGUI.DrawRect(subTick, new Color(1, 1, 1, 0.25f));
+            }
+
+            Rect tick = new(
+                new Vector2(X_MARGIN + (i * Scale), Y_MARGIN + SCRUB_HEIGHT),
+                new Vector2(1, position.size.y - (Y_MARGIN * 2.0f)));
+
+            EditorGUI.DrawRect(tick, new Color(1, 1, 1, 0.5f));
+            //EditorGUI.LabelField(tick, i.ToString(), new GUIStyle(GUIStyle.none) { normal = new GUIStyleState() { textColor = Color.white } });
+        }
     }
 }
 

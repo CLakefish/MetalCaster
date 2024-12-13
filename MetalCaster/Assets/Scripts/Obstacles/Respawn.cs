@@ -23,7 +23,10 @@ public class Respawn : MonoBehaviour
 {
     [SerializeField] public Vector3 spawnPos;
 
-    private void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(Collider other) => Spawn(other);
+    private void OnTriggerStay(Collider other)  => Spawn(other);
+
+    private void Spawn(Collider other)
     {
         other.transform.position = spawnPos;
         if (other.attachedRigidbody != null) other.attachedRigidbody.velocity = new Vector3(other.attachedRigidbody.velocity.x, 0, other.attachedRigidbody.velocity.z);

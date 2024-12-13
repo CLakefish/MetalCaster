@@ -13,9 +13,9 @@ public class AnimationData : ScriptableObject
     [HideInInspector] public bool isPlaying;
 
     public void Init(float start, float end, string name) {
-        this.start = start;
-        this.end   = end;
-        animName   = name;
+        this.start    = start;
+        this.end      = end;
+        this.animName = name;
     }
 
     public virtual Color Visual() {
