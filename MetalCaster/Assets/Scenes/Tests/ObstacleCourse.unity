@@ -14992,7 +14992,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1979879957}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0.96006584, z: 0, w: 0.2797744}
+  m_LocalRotation: {x: 0, y: 0.66522175, z: 0, w: 0.7466459}
   m_LocalPosition: {x: 2.19, y: -20.579773, z: -54.92}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -15038,14 +15038,23 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 3186f9e181abbde42a6f7fabd5bc7438, type: 2}
     animation: {fileID: 7400000, guid: 0d8a0bb405ded9141b035c84b90eefd3, type: 2}
   - data:
-    - {fileID: 11400000, guid: d4948493992ba3349b24cc8ff0b2b614, type: 2}
-    - {fileID: 11400000, guid: dbfac61dbfed0c54d8bfe356875e5ecf, type: 2}
+    - {fileID: 11400000, guid: 7db74b93568f09e4b99d2e5baf76bfd0, type: 2}
+    animation: {fileID: 7400000, guid: 71e5dbd18c5a2a44dbefed860c17979c, type: 2}
+  - data:
+    - {fileID: 11400000, guid: 7f7906e54007c7d4bbd1c43d4c521fec, type: 2}
+    - {fileID: 11400000, guid: df23a75c5888a8e4191842852a395e04, type: 2}
+    - {fileID: 11400000, guid: 17e302aa8fd26fd4a9ec4fb6329e3642, type: 2}
+    - {fileID: 11400000, guid: e18cf1f1297e0c44d818439a6b7ae5fa, type: 2}
     animation: {fileID: 7400000, guid: 2990a057295b27943983f964053a9502, type: 2}
   referenceList:
   - objectName: sadfsddfasdfasdf
     obj: {fileID: 1723550713}
   - objectName: Particle System
     obj: {fileID: 1173937781}
+  - objectName: dsf
+    obj: {fileID: 97055610}
+  - objectName: sadfsddfasdfasdf
+    obj: {fileID: 1723550713}
 --- !u!43 &1986481895
 Mesh:
   m_ObjectHideFlags: 0

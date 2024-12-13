@@ -38,7 +38,15 @@ public class AnimationEditor : EditorWindow
 
     private bool playing   = false;
     private bool scrubbing = false;
-    private Vector2 prevMousePos;
+    private Vector2 scrollPos;
+
+    private float TOTAL_HEIGHT
+    {
+        get
+        {
+            return (SPACING + HEIGHT) * (selectedData.Get(selectedAnimation).Count) + BUTTON_HEIGHT + SPACING + (Y_MARGIN * 2.0f);
+        }
+    }
 
     private float MaxX
     {
@@ -61,7 +69,7 @@ public class AnimationEditor : EditorWindow
 
     private void OnEnable()
     {
-        EditorApplication.update += UpdateAnimatorProgression;
+        EditorApplication.update   += UpdateAnimatorProgression;
         EditorApplication.quitting += () => { if (selectedData != null) selectedData.EnableAll(selectedAnimation); };
         lastTime = EditorApplication.timeSinceStartup;
     }
@@ -101,11 +109,14 @@ public class AnimationEditor : EditorWindow
 
         if (data != null)
         {
+            scrollPos = EditorGUILayout.BeginScrollView(scrollPos, false, true, GUILayout.Width(position.width), GUILayout.Height(position.height));
+            Rect _    = GUILayoutUtility.GetRect(position.width, TOTAL_HEIGHT + Y_MARGIN);
+
             ShowTicks();
 
             EditorGUI.DrawRect(new Rect(
                 X_MARGIN, 
-                HEIGHT + Y_MARGIN, 
+                HEIGHT, 
                 position.width - (2.0f * X_MARGIN), 
                 HEIGHT), 
                 Color.blue);
@@ -115,6 +126,8 @@ public class AnimationEditor : EditorWindow
             ShowScrubber(data, e);
 
             HandleDrops(data, e);
+
+            EditorGUILayout.EndScrollView();
         }
 
         switch (e.type)
@@ -335,7 +348,11 @@ public class AnimationEditor : EditorWindow
                     float start = data[i].start * Scale;
                     float end = data[i].end * Scale;
                     float width = Mathf.Abs(end - start);
-                    Rect test = new(X_MARGIN + start, (SPACING + HEIGHT) * (i + 1) + SPACING + BUTTON_HEIGHT + Y_MARGIN, width, HEIGHT);
+                    Rect test = new(
+                        X_MARGIN + start,
+                        (SPACING + HEIGHT) * (i + 1) + BUTTON_HEIGHT + SPACING,
+                        width,
+                        HEIGHT);
 
                     if (test.Contains(e.mousePosition))
                     {
@@ -363,13 +380,13 @@ public class AnimationEditor : EditorWindow
 
             Rect rect = new(
                 X_MARGIN + start, 
-                (SPACING + HEIGHT) * (i + 1) + BUTTON_HEIGHT + SPACING + Y_MARGIN,
+                (SPACING + HEIGHT) * (i + 1) + BUTTON_HEIGHT + SPACING,
                 width, 
                 HEIGHT);
 
             Rect bg   = new(
                 X_MARGIN, 
-                (SPACING + HEIGHT) * (i + 1) + BUTTON_HEIGHT + SPACING + Y_MARGIN, 
+                (SPACING + HEIGHT) * (i + 1) + BUTTON_HEIGHT + SPACING, 
                 position.width - (X_MARGIN * 2), 
                 HEIGHT);
 
@@ -415,6 +432,7 @@ public class AnimationEditor : EditorWindow
             {
                 case DragType.DRAGGING:
 
+                    // Fix this :)
                     if (animData.start + deltaX >= 0 && animData.end + deltaX < MaxX)
                     {
                         animData.start += deltaX;
@@ -443,8 +461,6 @@ public class AnimationEditor : EditorWindow
 
             EditorUtility.SetDirty(animData);
 
-            prevMousePos = e.mousePosition;
-
             Repaint();
             e.Use();
         }
@@ -461,15 +477,15 @@ public class AnimationEditor : EditorWindow
         Vector2 mousePos = e.mousePosition;
 
         EditorGUI.DrawRect(new Rect(
-        new Vector2(X_MARGIN + currentProgression * Scale, Y_MARGIN + SCRUB_HEIGHT),
-        new Vector2(1, position.size.y - (2.0f * Y_MARGIN))),
-        Color.yellow);
+        new Vector2(X_MARGIN + currentProgression * Scale, SCRUB_HEIGHT),
+        new Vector2(1, Mathf.Max(TOTAL_HEIGHT, position.width) - Y_MARGIN)),
+        Color.white);
 
         Rect handleRect = new(
-            new Vector2(X_MARGIN + currentProgression * Scale - (SCRUB_WIDTH / 2.0f), Y_MARGIN + SCRUB_HEIGHT),
+            new Vector2(X_MARGIN + currentProgression * Scale - (SCRUB_WIDTH / 2.0f), SCRUB_HEIGHT),
             new Vector2(SCRUB_WIDTH, SCRUB_HEIGHT));
 
-        EditorGUI.DrawRect(handleRect, Color.yellow);
+        EditorGUI.DrawRect(handleRect, Color.green);
 
         switch (e.type)
         {
@@ -520,11 +536,11 @@ public class AnimationEditor : EditorWindow
         int totalDivisions = 10;
 
         Rect up = new(
-            new Vector2(X_MARGIN, Y_MARGIN + SCRUB_HEIGHT),
+            new Vector2(X_MARGIN, SCRUB_HEIGHT),
             new Vector2(position.size.x - (X_MARGIN * 2.0f), 1));
 
         Rect down = new(
-            new Vector2(X_MARGIN, position.size.y - Y_MARGIN + SCRUB_HEIGHT),
+            new Vector2(X_MARGIN, TOTAL_HEIGHT + SCRUB_HEIGHT - Y_MARGIN),
             new Vector2(position.size.x - (X_MARGIN * 2.0f), 1));
 
         EditorGUI.DrawRect(up,   new Color(1, 1, 1, 0.25f));
@@ -532,20 +548,20 @@ public class AnimationEditor : EditorWindow
 
         for (int i = 0; i <= totalTicks; i++)
         {
-            for (int j = 0; j < totalDivisions; ++j)
+            for (int j = 1; j < totalDivisions; ++j)
             {
                 float newPos = i + (j / 10.0f);
 
                 Rect subTick = new(
-                    new Vector2(X_MARGIN + (newPos * Scale), Y_MARGIN + SCRUB_HEIGHT),
-                    new Vector2(1, position.size.y - (Y_MARGIN * 2.0f)));
+                    new Vector2(X_MARGIN + (newPos * Scale), SCRUB_HEIGHT),
+                    new Vector2(1, TOTAL_HEIGHT - Y_MARGIN));
 
                 EditorGUI.DrawRect(subTick, new Color(1, 1, 1, 0.25f));
             }
 
             Rect tick = new(
-                new Vector2(X_MARGIN + (i * Scale), Y_MARGIN + SCRUB_HEIGHT),
-                new Vector2(1, position.size.y - (Y_MARGIN * 2.0f)));
+                new Vector2(X_MARGIN + (i * Scale), SCRUB_HEIGHT),
+                new Vector2(1, TOTAL_HEIGHT - Y_MARGIN));
 
             EditorGUI.DrawRect(tick, new Color(1, 1, 1, 0.5f));
             //EditorGUI.LabelField(tick, i.ToString(), new GUIStyle(GUIStyle.none) { normal = new GUIStyleState() { textColor = Color.white } });

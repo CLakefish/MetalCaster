@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 44b8e071d8c95b74db7bc22374c80106, type: 3}
-  m_Name: AnimData638696132714019897
+  m_Name: AnimData638696431053483118
   m_EditorClassIdentifier: 
-  start: 0.100000136
-  end: 0.5422077
-  animName: AnimData638696132714019897.asset
+  start: 0.91699594
+  end: 1.9169959
+  animName: AnimData638696431053483118.asset
   objRef:
     objectName: 
     obj: {fileID: 0}
-  isPlaying: 1
+  isPlaying: 0
