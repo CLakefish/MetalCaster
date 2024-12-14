@@ -9,12 +9,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3ae8668921fc2254cb147ce8364ec486, type: 3}
-  m_Name: AnimData638696432443055118
+  m_Script: {fileID: 11500000, guid: 44b8e071d8c95b74db7bc22374c80106, type: 3}
+  m_Name: AnimData638697099559597096
   m_EditorClassIdentifier: 
-  start: 1.1146247
-  end: 2.1146243
-  animName: AnimData638696432443055118.asset
+  start: 0.07717681
+  end: 0.7493402
+  animName: AnimData638697099559597096.asset
   objRef:
     objectName: 
     obj: {fileID: 0}

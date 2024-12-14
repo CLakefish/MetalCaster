@@ -61,6 +61,9 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -407,7 +410,7 @@ MonoBehaviour:
   slideAngle: 10
   viewTiltAngle: 2
   wallRunAngle: 12.5
-  wallRunRotationSpeed: 0.11
+  wallRunRotationSpeed: 0.125
 --- !u!114 &3056770641862167720
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -429,6 +432,7 @@ MonoBehaviour:
   fallingCastDist: 1
   wallCastIncrements: 8
   wallCastDistance: 0.6
+  interpolateNormalSpeed: 25
   moveSpeed: 12
   crouchSpeed: 5
   acceleration: 100
@@ -442,13 +446,13 @@ MonoBehaviour:
   jumpBuffer: 0.15
   minJumpTime: 0.15
   slideForce: 18
-  slideRotationSpeed: 2.15
+  slideRotationSpeed: 2
   slideAcceleration: 14
   slideSlopeMomentumGain: 12
   slideJumpForce: 12
   crouchSize: 1
   standardSize: 2
-  crouchTime: 1.25
+  crouchTime: 3
   wallRunSpeed: 14
   wallRunMaxAngle: 75
   wallRunRotateGraceTime: 0.1

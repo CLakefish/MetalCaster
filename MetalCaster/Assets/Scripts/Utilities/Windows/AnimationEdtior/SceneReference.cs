@@ -6,6 +6,7 @@ public class SceneReference
     [SerializeField] public string objectName;
     [SerializeField] public GameObject obj;
 
+    public SceneReference() { }
     public SceneReference(GameObject obj) => Set(obj);
 
     public void Fix()

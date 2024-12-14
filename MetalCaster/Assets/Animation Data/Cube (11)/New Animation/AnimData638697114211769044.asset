@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7c0336df650d49d449b6423a8e64c86a, type: 3}
-  m_Name: AnimData638696431103598333
+  m_Name: AnimData638697114211769044
   m_EditorClassIdentifier: 
-  start: 0
-  end: 4
-  animName: AnimData638696431103598333.asset
+  start: 0.019129306
+  end: 0.96042174
+  animName: AnimData638697114211769044.asset
   objRef:
     objectName: 
     obj: {fileID: 0}
@@ -28,3 +28,9 @@ MonoBehaviour:
   exit:
     m_PersistentCalls:
       m_Calls: []
+  references:
+  - objectName: Player
+    obj: {fileID: 0}
+    scriptName: PlayerCamera
+    methodName: Piss
+    type: 1

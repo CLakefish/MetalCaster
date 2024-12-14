@@ -105,6 +105,11 @@ public class PlayerCamera : Player.PlayerComponent
         desiredZRotation += deg;
     }
 
+    public void Piss()
+    {
+        Debug.Log("piss");
+    }
+
     private void Start()
     {
         baseFOV   = fov;

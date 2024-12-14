@@ -29,7 +29,7 @@ public class Respawn : MonoBehaviour
     private void Spawn(Collider other)
     {
         other.transform.position = spawnPos;
-        if (other.attachedRigidbody != null) other.attachedRigidbody.velocity = new Vector3(other.attachedRigidbody.velocity.x, 0, other.attachedRigidbody.velocity.z);
+        if (other.attachedRigidbody != null) other.attachedRigidbody.linearVelocity = new Vector3(other.attachedRigidbody.linearVelocity.x, 0, other.attachedRigidbody.linearVelocity.z);
     }
 
     private void OnDrawGizmos()

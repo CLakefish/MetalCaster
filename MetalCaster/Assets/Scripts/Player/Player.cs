@@ -16,7 +16,7 @@ public class Player : MonoBehaviour
         playerInput.SetPlayer(this);
     }
 
-    public abstract class PlayerComponent : MonoBehaviour
+    public class PlayerComponent : MonoBehaviour
     {
         private Player player;
 
