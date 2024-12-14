@@ -6,28 +6,31 @@ using UnityEngine.InputSystem;
 public class PlayerInput : Player.PlayerComponent
 {
     [Header("Debugging")]
-    [SerializeField] private UnityEngine.InputSystem.PlayerInput action;
-    [SerializeField] private bool inputting;
+    [SerializeField] private UnityEngine.InputSystem.PlayerInput map;
+    [SerializeField] private BoolInput jump;
+    [SerializeField] private Vector2Input input;
     
     [Header("Variables")]
     [SerializeField] private Vector2 sensitivity;
     [SerializeField] private bool invertX;
     [SerializeField] private bool invertY;
 
+    private HashSet<InputScriptableObject> inputSet;
+
     public Vector2 Input { 
         get {
-            return action.actions["Move"].ReadValue<Vector2>();
+            return input.Value;
         } 
     }
     public Vector2 NormalizedInput { 
         get {
-            return Input.normalized; 
+            return input.NormalizedValue; 
         } 
     }
 
     public Vector2 MousePosition { 
         get { 
-            return action.actions["View"].ReadValue<Vector2>(); 
+            return map.actions["View"].ReadValue<Vector2>(); 
         } 
     }
 
@@ -39,28 +42,31 @@ public class PlayerInput : Player.PlayerComponent
 
     public bool IsInputting { 
         get { 
-            return inputting; 
+            return input.Active; 
         }
     }
 
     public bool Slide {
         get {
-            return action.actions["Slide"].IsPressed();
+            return map.actions["Slide"].IsPressed();
         }
     }
 
     public bool Jump {
         get {
-            return action.actions["Jump"].IsPressed();
+            return jump.Pressed;
         }
+    }
+
+    private void OnEnable()
+    {
+        inputSet = new() { jump, input };
+
+        foreach (var action in inputSet) action.Initialize(map);
     }
 
     private void Update()
     {
-        inputting = Input != Vector2.zero;
-        /*
-        mouseVec  = new Vector2(UnityEngine.Input.GetAxisRaw("Mouse X"), UnityEngine.Input.GetAxisRaw("Mouse Y"));
-        inputs    = new Vector2(UnityEngine.Input.GetAxisRaw("Horizontal"), UnityEngine.Input.GetAxisRaw("Vertical"));
-        inputting = inputs != Vector2.zero;*/
+        foreach (var action in inputSet) action.Update();
     }
 }
