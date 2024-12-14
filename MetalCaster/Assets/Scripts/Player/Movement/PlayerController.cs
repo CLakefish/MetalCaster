@@ -189,35 +189,36 @@ public class PlayerController : Player.PlayerComponent
         {
             // Grounded transitions
             new(Grounded, Falling,   () => !GroundCollision),
-            new(Grounded, SlideJump, () => Input.GetKeyDown(KeyCode.Space)   && PreviousState == Sliding && hfsm.Duration < coyoteTime),
-            new(Grounded, Jumping,   () => Input.GetKeyDown(KeyCode.Space)   || jumpBufferTime > 0),
-            new(Grounded, Sliding,   () => Input.GetKey(KeyCode.LeftControl)),
+            new(Grounded, SlideJump, () => playerInput.Jump && PreviousState == Sliding && hfsm.Duration < coyoteTime),
+            new(Grounded, Jumping,   () => playerInput.Jump || jumpBufferTime > 0),
+            new(Grounded, Sliding,   () => playerInput.Slide),
 
             // Jumping transitions   
             new(Jumping, Falling,    () => rb.linearVelocity.y <= 0 && hfsm.Duration >= minJumpTime),
             new(Jumping, WallRun,    () => WallCollision && AllowWallRun && hfsm.Duration >= minJumpTime),
 
             // Falling transitions   
-            new(Falling, SlideJump,  () => Input.GetKeyDown(KeyCode.Space)    && PreviousState == Sliding  && hfsm.Duration < coyoteTime),
-            new(Falling, Jumping,    () => Input.GetKeyDown(KeyCode.Space)    && PreviousState == Grounded && hfsm.Duration < coyoteTime),
-            new(Falling, Sliding,    () => Input.GetKey(KeyCode.LeftControl)  && GroundCollision),
+            new(Falling, Jumping,    () => playerInput.Jump && PreviousState == Grounded && hfsm.Duration < coyoteTime),
+            new(Falling, SlideJump,  () => playerInput.Jump && PreviousState == Sliding && hfsm.Duration < coyoteTime),
+            new(Falling, WallJump,   () => playerInput.Jump && WallCollision && !GroundCollision),
+            new(Falling, WallJump,   () => playerInput.Jump && PreviousState == WallRun && hfsm.Duration < wallJumpCoyoteTime),
+
             new(Falling, Grounded,   () => GroundCollision),
+            new(Falling, Sliding,    () => playerInput.Slide && GroundCollision),
             new(Falling, WallRun,    () => WallCollision && !GroundCollision  && AllowWallRun),
-            new(Falling, WallJump,   () => Input.GetKeyDown(KeyCode.Space) && WallCollision && !GroundCollision),
-            new(Falling, WallJump,   () => Input.GetKeyDown(KeyCode.Space) && PreviousState == WallRun  && hfsm.Duration < wallJumpCoyoteTime),
 
             // Sliding transitions   
-            new(Sliding, SlideJump,  () => Input.GetKeyDown(KeyCode.Space) || jumpBufferTime > 0),
+            new(Sliding, SlideJump,  () => playerInput.Jump || jumpBufferTime > 0),
             new(Sliding, Falling,    () => !GroundCollision && !SlopeCollision),
-            new(Sliding, Grounded,   () => !Input.GetKey(KeyCode.LeftControl) && GroundCollision),
+            new(Sliding, Grounded,   () => !playerInput.Slide && GroundCollision),
 
             // Slide jump transitions
-            new(SlideJump, Falling,  () => (!Input.GetKey(KeyCode.LeftControl)) || (rb.linearVelocity.y < 0 && hfsm.Duration > 0)),
-            new(SlideJump, Grounded, () => !Input.GetKey(KeyCode.LeftControl) && GroundCollision && hfsm.Duration >= minJumpTime),
-            new(SlideJump, Sliding,  () => Input.GetKey(KeyCode.LeftControl)  && GroundCollision && hfsm.Duration >= minJumpTime),
+            new(SlideJump, Falling,  () => (!playerInput.Slide) || (rb.linearVelocity.y < 0 && hfsm.Duration > 0)),
+            new(SlideJump, Grounded, () => !playerInput.Slide && GroundCollision && hfsm.Duration >= minJumpTime),
+            new(SlideJump, Sliding,  () => playerInput.Slide && GroundCollision && hfsm.Duration >= minJumpTime),
 
             // Wall run transitions
-            new(WallRun, WallJump,   () => Input.GetKeyDown(KeyCode.Space) || jumpBufferTime > 0),
+            new(WallRun, WallJump,   () => playerInput.Jump || jumpBufferTime > 0),
             new(WallRun, Falling,    () => !WallCollision && !GroundCollision),
             new(WallRun, Falling,    () => !AllowWallRun),
             new(WallRun, Grounded,   () => GroundCollision),
@@ -246,7 +247,7 @@ public class PlayerController : Player.PlayerComponent
         hfsm.CheckTransitions();
         hfsm.Update();
 
-        ChangeSize(Input.GetKey(KeyCode.LeftControl) || !CanUncrouch ? crouchSize : standardSize);
+        ChangeSize(playerInput.Slide || !CanUncrouch ? crouchSize : standardSize);
     }
 
     private void FixedUpdate()
@@ -356,7 +357,6 @@ public class PlayerController : Player.PlayerComponent
 
     private void ResetWallCollisions()
     {
-        WallNormal = Vector3.up;
         WallCollision = false;
     }
 

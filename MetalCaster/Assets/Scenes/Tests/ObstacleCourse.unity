@@ -3273,9 +3273,25 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 3056770641862167720, guid: 8b0355b9aca499d4da82659b520960f3, type: 3}
-      propertyPath: fallingCastDist
-      value: 0.9
+    - target: {fileID: 341725526681868616, guid: 8b0355b9aca499d4da82659b520960f3, type: 3}
+      propertyPath: action
+      value: 
+      objectReference: {fileID: 574774265}
+    - target: {fileID: 341725526681868616, guid: 8b0355b9aca499d4da82659b520960f3, type: 3}
+      propertyPath: action.m_Id
+      value: af20d0d9-5096-436f-8554-d5684348ce44
+      objectReference: {fileID: 0}
+    - target: {fileID: 341725526681868616, guid: 8b0355b9aca499d4da82659b520960f3, type: 3}
+      propertyPath: action.m_Name
+      value: Action
+      objectReference: {fileID: 0}
+    - target: {fileID: 341725526681868616, guid: 8b0355b9aca499d4da82659b520960f3, type: 3}
+      propertyPath: sensitivity.x
+      value: 0.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 341725526681868616, guid: 8b0355b9aca499d4da82659b520960f3, type: 3}
+      propertyPath: sensitivity.y
+      value: 0.25
       objectReference: {fileID: 0}
     - target: {fileID: 5535380081666628709, guid: 8b0355b9aca499d4da82659b520960f3, type: 3}
       propertyPath: m_LocalPosition.x
@@ -3324,7 +3340,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8621947090278987850, guid: 8b0355b9aca499d4da82659b520960f3, type: 3}
+      insertIndex: 2
+      addedObject: {fileID: 574774265}
   m_SourcePrefab: {fileID: 100100000, guid: 8b0355b9aca499d4da82659b520960f3, type: 3}
 --- !u!1 &570814401
 GameObject:
@@ -3683,6 +3702,36 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 8621947090278987850, guid: 8b0355b9aca499d4da82659b520960f3, type: 3}
   m_PrefabInstance: {fileID: 494555232}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &574774265
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 574774264}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Actions: {fileID: -944628639613478452, guid: 7db21583dc53bc4489ae0dedcb7e1e9a, type: 3}
+  m_NotificationBehavior: 0
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents: []
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: 
+  m_DefaultActionMap: Gameplay
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 0}
 --- !u!1 &610641225
 GameObject:
   m_ObjectHideFlags: 0
@@ -15444,7 +15493,7 @@ Transform:
   m_GameObject: {fileID: 1979879957}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.90810305, z: 0, w: 0.41874686}
-  m_LocalPosition: {x: 2.19, y: -0.73075485, z: -54.92}
+  m_LocalPosition: {x: 2.19, y: -11.103634, z: -54.92}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
