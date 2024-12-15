@@ -5,10 +5,14 @@ using UnityEngine.InputSystem;
 
 public class PlayerInput : Player.PlayerComponent
 {
-    [Header("Debugging")]
+    [Header("Map")]
     [SerializeField] private UnityEngine.InputSystem.PlayerInput map;
+
+    [Header("Inputs")]
+    [SerializeField] private Vector2Input moveInput;
+    [SerializeField] private Vector2Input viewInput;
     [SerializeField] private BoolInput jump;
-    [SerializeField] private Vector2Input input;
+    [SerializeField] private BoolInput slide;
     
     [Header("Variables")]
     [SerializeField] private Vector2 sensitivity;
@@ -19,18 +23,18 @@ public class PlayerInput : Player.PlayerComponent
 
     public Vector2 Input { 
         get {
-            return input.Value;
+            return moveInput.Value;
         } 
     }
     public Vector2 NormalizedInput { 
         get {
-            return input.NormalizedValue; 
+            return moveInput.NormalizedValue; 
         } 
     }
 
     public Vector2 MousePosition { 
         get { 
-            return map.actions["View"].ReadValue<Vector2>(); 
+            return viewInput.Value; 
         } 
     }
 
@@ -42,13 +46,13 @@ public class PlayerInput : Player.PlayerComponent
 
     public bool IsInputting { 
         get { 
-            return input.Active; 
+            return moveInput.Active; 
         }
     }
 
     public bool Slide {
         get {
-            return map.actions["Slide"].IsPressed();
+            return slide.Held && !slide.Released;
         }
     }
 
@@ -60,7 +64,7 @@ public class PlayerInput : Player.PlayerComponent
 
     private void OnEnable()
     {
-        inputSet = new() { jump, input };
+        inputSet = new() { jump, moveInput, slide, viewInput };
 
         foreach (var action in inputSet) action.Initialize(map);
     }

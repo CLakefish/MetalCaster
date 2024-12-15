@@ -9,21 +9,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9cf75a2f0ff3ee34aacd484970ac5587, type: 3}
-  m_Name: Inputs_Bool Input
+  m_Script: {fileID: 11500000, guid: 560c538517b9268489f09804996cd2c6, type: 3}
+  m_Name: View
   m_EditorClassIdentifier: 
   action:
-    m_Name: Jump
-    m_Type: 1
-    m_ExpectedControlType: 
-    m_Id: d6cf8d54-658e-4fb0-b2ad-783aefb5e846
+    m_Name: View
+    m_Type: 0
+    m_ExpectedControlType: Vector2
+    m_Id: da671bda-6be0-442d-9185-ab37ee6925ee
     m_Processors: 
     m_Interactions: 
     m_SingletonActionBindings: []
-    m_Flags: 0
+    m_Flags: 1
   map: {fileID: 0}
-  bindName: Jump
+  bindName: View
   locked: 0
-  held: 0
-  pressed: 0
-  released: 0
+  value: {x: 0, y: 0}
+  active: 0
