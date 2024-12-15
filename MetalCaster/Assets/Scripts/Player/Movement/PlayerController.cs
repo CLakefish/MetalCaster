@@ -71,7 +71,7 @@ public class PlayerController : Player.PlayerComponent
     [SerializeField] private float wallJumpKickDot;
 
     private readonly float groundCastRad       = 0.4f;
-    private readonly float interpDeviation     = 22.5f; // 90.0f / 4
+    private readonly float interpDeviation     = 10;
     private readonly float raycastMargin       = 0.1f;
     private readonly float floorStickThreshold = 0.05f;
     private readonly float slideDotMin         = -0.25f;
@@ -83,6 +83,17 @@ public class PlayerController : Player.PlayerComponent
 
     private bool WallCollision                  { get; set; }
     private Vector3 WallNormal                  { get; set; }
+
+
+    private StateMachine<PlayerController> hfsm;
+
+    private GroundedState Grounded { get; set; }
+    private FallingState Falling { get; set; }
+    private JumpingState Jumping { get; set; }
+    private SlidingState Sliding { get; set; }
+    private SlideJumping SlideJump { get; set; }
+    private WallRunning WallRun { get; set; }
+    private WallJumping WallJump { get; set; }
 
     private float Size {
         get { 
@@ -150,16 +161,6 @@ public class PlayerController : Player.PlayerComponent
             return hfsm.PreviousState;
         }
     }
-
-    private StateMachine<PlayerController> hfsm;
-
-    private GroundedState  Grounded  { get; set; }
-    private FallingState   Falling   { get; set; }
-    private JumpingState   Jumping   { get; set; }
-    private SlidingState   Sliding   { get; set; }
-    private SlideJumping   SlideJump { get; set; }
-    private WallRunning    WallRun   { get; set; }
-    private WallJumping    WallJump  { get; set; }
 
     private Vector2 DesiredVelocity { get; set; }
     private Coroutine sizeChange = null;
@@ -453,7 +454,7 @@ public class PlayerController : Player.PlayerComponent
     private class SlidingState : State<PlayerController>
     {
         private Vector3 momentum;
-
+        private Vector3 stickVel;
         public SlidingState(PlayerController context) : base(context) { }
 
         public override void Enter() {
@@ -471,8 +472,10 @@ public class PlayerController : Player.PlayerComponent
                 }
             }
 
-            context.DesiredVelocity = new Vector2(momentum.x, momentum.z);
-            context.slideBoost      = false;
+            context.rb.linearVelocity = momentum;
+            context.DesiredVelocity   = new Vector2(momentum.x, momentum.z);
+            context.slideBoost        = false;
+            stickVel                  = Vector3.zero;
         }
 
         public override void Update() => context.playerCamera.SlideRotate(momentum);
@@ -518,6 +521,23 @@ public class PlayerController : Player.PlayerComponent
                         momentum = Vector3.ProjectOnPlane(momentum, context.GroundNormal);
                     }
                 }
+            }
+
+            if (new Vector2(context.rb.linearVelocity.x, context.rb.linearVelocity.z).magnitude <= context.slideForce)
+            {
+                float halfSize = context.Size / 2.0f;
+                float yPos = context.Position.y - halfSize - context.GroundPoint.y;
+                float yCheck = context.floorStickThreshold;
+                Vector3 targetPos = new(context.Position.x, context.GroundPoint.y + halfSize, context.Position.z);
+
+                if (yPos > yCheck)
+                {
+                    Vector3 currentPos = context.rb.position;
+                    Vector3 smoothPos = Vector3.SmoothDamp(currentPos, targetPos, ref stickVel, context.groundStickSpeed, Mathf.Infinity, Time.fixedDeltaTime);
+                    context.rb.MovePosition(smoothPos);
+                }
+
+                momentum.y = Mathf.Min(momentum.y, 0);
             }
 
             context.rb.linearVelocity = momentum;
@@ -626,12 +646,11 @@ public class PlayerController : Player.PlayerComponent
             if (dot <= context.wallJumpMinDot)  dir = (context.playerCamera.CameraForwardNoY + context.WallNormal).normalized;
             if (dot <= context.wallJumpKickDot) dir = context.WallNormal;
 
-            Vector3 vel    = Quaternion.FromToRotation(context.rb.linearVelocity.normalized, dir) * context.rb.linearVelocity.normalized;
-            Vector2 noYVel = new(context.rb.linearVelocity.x, context.rb.linearVelocity.z);
+            Vector3 vel = Quaternion.FromToRotation(context.rb.linearVelocity.normalized, dir) * context.rb.linearVelocity.normalized;
 
-            vel *= Mathf.Abs(noYVel.magnitude) < context.wallJumpForce 
+            vel *= Mathf.Abs(context.rb.linearVelocity.magnitude) < context.wallJumpForce 
                 ? context.wallJumpForce
-                : noYVel.magnitude;
+                : context.rb.linearVelocity.magnitude;
 
             vel += Vector3.up * context.wallJumpHeight;
 
