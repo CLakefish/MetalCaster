@@ -6,7 +6,7 @@ using UnityEngine;
 public class AnimCurve
 {
     [SerializeField] private AnimationCurve curve;
-    [SerializeField] private float speed;
+    [SerializeField] private float speed = 1;
     private float totalTime = 0;
 
     public Coroutine Coroutine { get; set; }

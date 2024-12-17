@@ -15,6 +15,15 @@
                     "initialStateCheck": true
                 },
                 {
+                    "name": "View",
+                    "type": "Value",
+                    "id": "da671bda-6be0-442d-9185-ab37ee6925ee",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
                     "name": "Jump",
                     "type": "Button",
                     "id": "d6cf8d54-658e-4fb0-b2ad-783aefb5e846",
@@ -30,16 +39,25 @@
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
-                    "initialStateCheck": true
+                    "initialStateCheck": false
                 },
                 {
-                    "name": "View",
-                    "type": "Value",
-                    "id": "da671bda-6be0-442d-9185-ab37ee6925ee",
-                    "expectedControlType": "Vector2",
+                    "name": "MouseLeft",
+                    "type": "Button",
+                    "id": "a15b8dc0-bbb8-45a5-8db7-b62289e2ecb8",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
-                    "initialStateCheck": true
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "MouseRight",
+                    "type": "Button",
+                    "id": "24e58cd0-acf9-4a7f-b169-7d561e4afbeb",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -134,7 +152,7 @@
                 {
                     "name": "",
                     "id": "e40e0e7f-5c8e-4b7e-b473-4e1ced7be611",
-                    "path": "<Keyboard>/leftShift",
+                    "path": "<Mouse>/rightButton",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -161,6 +179,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "View",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "03a971ea-cc91-4435-8e05-ef74e5fd60ad",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "MouseLeft",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "4de8d1d3-e079-4c4a-8cb0-a9cf8b6a3b69",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "MouseRight",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

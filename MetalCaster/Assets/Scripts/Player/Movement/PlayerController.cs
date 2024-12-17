@@ -1,8 +1,6 @@
-using System.Collections.Generic;
-using UnityEngine;
 using HFSMFramework;
-using System;
 using System.Collections;
+using UnityEngine;
 
 // Made by Carson Lakefish
 // Concept recommendations and help by Oliver Beebe
@@ -46,7 +44,8 @@ public class PlayerController : Player.PlayerComponent
     [SerializeField] private float slideForce;
     [SerializeField] private float slideRotationSpeed;
     [SerializeField] private float slideAcceleration;
-    [SerializeField] private float slideSlopeMomentumGain; 
+    [SerializeField] private float slideSlopeMomentumGain;
+    [SerializeField] private float slideStickSpeed;
 
     [Header("Slide Jump Parameters")]
     [SerializeField] private float slideJumpForce;
@@ -127,18 +126,24 @@ public class PlayerController : Player.PlayerComponent
         }
     }
 
+    private Vector3 HorizontalVelocity {
+        get {
+            return new Vector2(rb.linearVelocity.x, rb.linearVelocity.z);
+        }
+    }
+
     private Vector3 ViewPosition {
         get {
-            return playerInput.IsInputting
-            ? (playerCamera.CameraForward * playerInput.NormalizedInput.y + playerCamera.CameraRight * playerInput.NormalizedInput.x).normalized
+            return PlayerInput.IsInputting
+            ? (PlayerCamera.CameraForward * PlayerInput.NormalizedInput.y + PlayerCamera.CameraRight * PlayerInput.NormalizedInput.x).normalized
             : Vector3.zero;
         }
     }
 
     private Vector3 ViewPositionNoY {
         get {
-            return playerInput.IsInputting
-            ? (playerCamera.CameraForwardNoY * playerInput.NormalizedInput.y + playerCamera.CameraRight * playerInput.NormalizedInput.x).normalized
+            return PlayerInput.IsInputting
+            ? (PlayerCamera.CameraForwardNoY * PlayerInput.NormalizedInput.y + PlayerCamera.CameraRight * PlayerInput.NormalizedInput.x).normalized
             : Vector3.zero;
         }
     }
@@ -162,11 +167,12 @@ public class PlayerController : Player.PlayerComponent
         }
     }
 
-    private Vector2 DesiredVelocity { get; set; }
+    private Vector2 DesiredHorizontalVelocity { get; set; }
     private Coroutine sizeChange = null;
     private bool slideBoost = true;
 
     private float jumpBufferTime = 0;
+    private float prevFloorPosY;
 
 
     private void OnEnable()
@@ -189,44 +195,44 @@ public class PlayerController : Player.PlayerComponent
         {
             // Grounded transitions
             new(Grounded, Falling,   () => !GroundCollision),
-            new(Grounded, SlideJump, () => (playerInput.Jump || jumpBufferTime > 0) && PreviousState == Sliding),
-            new(Grounded, Jumping,   () => playerInput.Jump || jumpBufferTime > 0),
-            new(Grounded, Sliding,   () => playerInput.Slide),
+            new(Grounded, SlideJump, () => (PlayerInput.Jump || jumpBufferTime > 0) && PreviousState == Sliding),
+            new(Grounded, Jumping,   () => PlayerInput.Jump  || jumpBufferTime > 0),
+            new(Grounded, Sliding,   () => PlayerInput.Slide),
 
             // Jumping transitions   
             new(Jumping, Falling,    () => rb.linearVelocity.y <= 0 && hfsm.Duration >= minJumpTime),
             new(Jumping, WallRun,    () => WallCollision && AllowWallRun && hfsm.Duration >= minJumpTime),
 
             // Falling transitions   
-            new(Falling, Jumping,    () => playerInput.Jump && PreviousState == Grounded && hfsm.Duration < coyoteTime),
-            new(Falling, SlideJump,  () => playerInput.Jump && PreviousState == Sliding && hfsm.Duration < coyoteTime),
-            new(Falling, WallJump,   () => playerInput.Jump && WallCollision && !GroundCollision),
-            new(Falling, WallJump,   () => playerInput.Jump && PreviousState == WallRun && hfsm.Duration < wallJumpCoyoteTime),
+            new(Falling, Jumping,    () => PlayerInput.Jump && PreviousState == Grounded && hfsm.Duration < coyoteTime),
+            new(Falling, SlideJump,  () => PlayerInput.Jump && PreviousState == Sliding && hfsm.Duration < coyoteTime),
+            new(Falling, WallJump,   () => PlayerInput.Jump && WallCollision && !GroundCollision),
+            new(Falling, WallJump,   () => PlayerInput.Jump && PreviousState == WallRun && hfsm.Duration < wallJumpCoyoteTime),
 
-            new(Falling, Grounded,   () => !playerInput.Slide && GroundCollision),
-            new(Falling, Sliding,    () => playerInput.Slide  && GroundCollision),
-            new(Falling, WallRun,    () => WallCollision && !GroundCollision  && AllowWallRun),
+            new(Falling, Grounded,   () => !PlayerInput.Slide && GroundCollision),
+            new(Falling, Sliding,    () => PlayerInput.Slide  && GroundCollision),
+            new(Falling, WallRun,    () => WallCollision      && !GroundCollision && AllowWallRun),
 
             // Sliding transitions   
-            new(Sliding, SlideJump,  () => (playerInput.Jump || jumpBufferTime > 0) && GroundCollision),
-            new(Sliding, Falling,    () => !GroundCollision && !SlopeCollision),
-            new(Sliding, Grounded,   () => !playerInput.Slide && GroundCollision),
+            new(Sliding, SlideJump,  () => (PlayerInput.Jump || jumpBufferTime > 0) && GroundCollision),
+            new(Sliding, Falling,    () => !GroundCollision   && !SlopeCollision),
+            new(Sliding, Grounded,   () => !PlayerInput.Slide && GroundCollision),
 
             // Slide jump transitions
-            new(SlideJump, Falling,  () => ((!playerInput.Slide) || (rb.linearVelocity.y < 0 && hfsm.Duration > 0)) && hfsm.Duration > minJumpTime),
-            new(SlideJump, Grounded, () => !playerInput.Slide && GroundCollision && hfsm.Duration >= minJumpTime),
-            new(SlideJump, Sliding,  () => playerInput.Slide && GroundCollision && hfsm.Duration >= minJumpTime),
+            new(SlideJump, Falling,  () => ((!PlayerInput.Slide) || (rb.linearVelocity.y < 0 && hfsm.Duration > 0)) && hfsm.Duration > minJumpTime),
+            new(SlideJump, Grounded, () => !PlayerInput.Slide && GroundCollision && hfsm.Duration >= minJumpTime),
+            new(SlideJump, Sliding,  () => PlayerInput.Slide  && GroundCollision && hfsm.Duration >= minJumpTime),
 
             // Wall run transitions
-            new(WallRun, WallJump,   () => playerInput.Jump || jumpBufferTime > 0),
-            new(WallRun, Falling,    () => !WallCollision && !GroundCollision),
+            new(WallRun, WallJump,   () => PlayerInput.Jump || jumpBufferTime > 0),
+            new(WallRun, Falling,    () => !WallCollision   && !GroundCollision),
             new(WallRun, Falling,    () => !AllowWallRun),
             new(WallRun, Grounded,   () => GroundCollision),
 
             // Wall jump transitions
             new(WallJump, Falling,   () => hfsm.Duration >= wallJumpTime),
             new(WallJump, Grounded,  () => GroundCollision && hfsm.Duration >= wallJumpTime),
-            new(WallJump, WallRun,   () => WallCollision && AllowWallRun && hfsm.Duration >= wallJumpTime),
+            new(WallJump, WallRun,   () => WallCollision   && AllowWallRun && hfsm.Duration >= wallJumpTime),
 
 #if UNITY_EDITOR
             new(null,     DebugFly,  () => Input.GetKeyDown(KeyCode.F)),
@@ -247,7 +253,7 @@ public class PlayerController : Player.PlayerComponent
         hfsm.CheckTransitions();
         hfsm.Update();
 
-        ChangeSize(playerInput.Slide || !CanUncrouch ? crouchSize : standardSize);
+        ChangeSize(PlayerInput.Slide || !CanUncrouch ? crouchSize : standardSize);
     }
 
     private void FixedUpdate()
@@ -271,16 +277,16 @@ public class PlayerController : Player.PlayerComponent
     private void Move(float moveSpeed, bool maintainMomentum = true)
     {
         float increasedValue = maintainMomentum
-            ? Mathf.Max(moveSpeed, Mathf.Abs(new Vector2(rb.linearVelocity.x, rb.linearVelocity.z).magnitude)) 
+            ? Mathf.Max(moveSpeed, Mathf.Abs(HorizontalVelocity.magnitude)) 
             : moveSpeed;
 
-        float speedChange = playerInput.IsInputting
+        float speedChange = PlayerInput.IsInputting
             ? acceleration
             : deceleration;
 
-        DesiredVelocity = Vector2.MoveTowards(DesiredVelocity, new Vector2(ViewPositionNoY.x, ViewPositionNoY.z) * increasedValue, speedChange * Time.fixedDeltaTime);
+        DesiredHorizontalVelocity = Vector2.MoveTowards(DesiredHorizontalVelocity, new Vector2(ViewPositionNoY.x, ViewPositionNoY.z) * increasedValue, speedChange * Time.fixedDeltaTime);
 
-        Vector3 setVelocity = new (DesiredVelocity.x, rb.linearVelocity.y, DesiredVelocity.y);
+        Vector3 setVelocity = new (DesiredHorizontalVelocity.x, rb.linearVelocity.y, DesiredHorizontalVelocity.y);
 
         if (SlopeCollision && CurrentState == Grounded) {
             setVelocity.y = 0;
@@ -358,8 +364,7 @@ public class PlayerController : Player.PlayerComponent
     private void ResetGroundCollisions() => SlopeCollision = GroundCollision = false;
     private void ResetWallCollisions()   => WallCollision  = false;
 
-    public void Launch()
-    {
+    public void Launch() {
         ResetGroundCollisions();
         ResetWallCollisions();
         hfsm.ChangeState(Falling);
@@ -390,16 +395,15 @@ public class PlayerController : Player.PlayerComponent
         public GroundedState(PlayerController context) : base(context) { }
 
         public override void Enter() {
-            if (context.PreviousState == context.Falling) {
-                context.playerCamera.JumpBob();
-            }
+            if (context.PreviousState != context.Sliding) 
+                context.PlayerCamera.JumpBob(Mathf.Abs(context.prevFloorPosY - context.GroundPoint.y));
 
             context.slideBoost = true;
             stickVel           = Vector3.zero;
         }
 
         public override void Update() {
-            context.playerCamera.ViewTilt();
+            context.PlayerCamera.ViewTilt();
         }
 
         public override void FixedUpdate() {
@@ -419,6 +423,8 @@ public class PlayerController : Player.PlayerComponent
 
             context.Move(context.moveSpeed, context.hfsm.Duration < context.groundMomentumConserveTime);
         }
+
+        public override void Exit() => context.prevFloorPosY = context.GroundPoint.y;
     }
 
     private class FallingState : State<PlayerController>
@@ -460,8 +466,10 @@ public class PlayerController : Player.PlayerComponent
         public override void Enter() {
             momentum = context.rb.linearVelocity;
 
-            if (context.slideBoost) {
-                context.playerCamera.FOVPulse();
+            if (context.PreviousState != context.Grounded) context.PlayerCamera.JumpBob();
+
+            if (context.slideBoost && context.HorizontalVelocity.magnitude <= context.slideForce) {
+                context.PlayerCamera.FOVPulse();
 
                 if (context.SlopeCollision) {
                     Vector3 dir = (context.ViewPositionNoY * context.slideForce) + (context.gravity * Time.fixedDeltaTime * Vector3.down);
@@ -472,13 +480,13 @@ public class PlayerController : Player.PlayerComponent
                 }
             }
 
-            context.rb.linearVelocity = momentum;
-            context.DesiredVelocity   = new Vector2(momentum.x, momentum.z);
-            context.slideBoost        = false;
-            stickVel                  = Vector3.zero;
+            context.rb.linearVelocity         = momentum;
+            context.DesiredHorizontalVelocity = new Vector2(momentum.x, momentum.z);
+            context.slideBoost                = false;
+            stickVel                          = Vector3.zero;
         }
 
-        public override void Update() => context.playerCamera.SlideRotate(momentum);
+        public override void Update() => context.PlayerCamera.SlideRotate(momentum);
 
         public override void FixedUpdate() {
             Vector3 desiredVelocity;
@@ -522,7 +530,7 @@ public class PlayerController : Player.PlayerComponent
                     }
                 }
             }
-
+            
             if (new Vector2(context.rb.linearVelocity.x, context.rb.linearVelocity.z).magnitude <= context.slideForce)
             {
                 float halfSize = context.Size / 2.0f;
@@ -533,16 +541,18 @@ public class PlayerController : Player.PlayerComponent
                 if (yPos > yCheck)
                 {
                     Vector3 currentPos = context.rb.position;
-                    Vector3 smoothPos = Vector3.SmoothDamp(currentPos, targetPos, ref stickVel, context.groundStickSpeed, Mathf.Infinity, Time.fixedDeltaTime);
+                    Vector3 smoothPos = Vector3.SmoothDamp(currentPos, targetPos, ref stickVel, context.slideStickSpeed, Mathf.Infinity, Time.fixedDeltaTime);
                     context.rb.MovePosition(smoothPos);
                 }
 
                 momentum.y = Mathf.Min(momentum.y, 0);
             }
 
-            context.rb.linearVelocity = momentum;
-            context.DesiredVelocity   = new Vector2(momentum.x, momentum.z);
+            context.rb.linearVelocity         = momentum;
+            context.DesiredHorizontalVelocity = new Vector2(momentum.x, momentum.z);
         }
+
+        public override void Exit() => context.prevFloorPosY = context.GroundPoint.y;
     }
 
     private class SlideJumping : State<PlayerController>
@@ -588,8 +598,8 @@ public class PlayerController : Player.PlayerComponent
                 temp = Quaternion.FromToRotation(Vector3.up, context.WallNormal) * temp;
             }
 
-            context.rb.linearVelocity = new Vector3(temp.x, tempY, temp.z);
-            context.DesiredVelocity   = new Vector2(context.rb.linearVelocity.x, context.rb.linearVelocity.z);
+            context.rb.linearVelocity         = new Vector3(temp.x, tempY, temp.z);
+            context.DesiredHorizontalVelocity = context.HorizontalVelocity;
 
             prevForward = context.WallNormal;
             targetY     = context.rb.transform.localEulerAngles.y;
@@ -598,8 +608,8 @@ public class PlayerController : Player.PlayerComponent
 
         public override void Update() {
 
-            if (context.playerInput.MousePosition == Vector2.zero && context.hfsm.Duration > context.wallRunRotateGraceTime) {
-                float y = Mathf.SmoothDampAngle(context.rb.transform.localEulerAngles.y, targetY, ref rotateVel, context.playerCamera.wallRunRotationSpeed);
+            if (context.PlayerInput.MousePosition == Vector2.zero && context.hfsm.Duration > context.wallRunRotateGraceTime) {
+                float y = Mathf.SmoothDampAngle(context.rb.transform.localEulerAngles.y, targetY, ref rotateVel, context.PlayerCamera.wallRunRotationSpeed);
 
                 context.rb.MoveRotation(Quaternion.Euler(new Vector3(0, y, 0)));
 
@@ -614,7 +624,7 @@ public class PlayerController : Player.PlayerComponent
 
             prevForward = context.WallNormal;
 
-            context.playerCamera.WallRunRotate(context.WallNormal);
+            context.PlayerCamera.WallRunRotate(context.WallNormal);
         }
 
         public override void FixedUpdate() {
@@ -626,13 +636,15 @@ public class PlayerController : Player.PlayerComponent
                 ? context.rb.linearVelocity.y - (context.gravity * Time.fixedDeltaTime)
                 : context.rb.linearVelocity.y - (context.wallRunGravity * Time.fixedDeltaTime);
 
-            context.DesiredVelocity   = new Vector2(projected.x, projected.z);
-            context.rb.linearVelocity = new Vector3(context.DesiredVelocity.x, downwardForce, context.DesiredVelocity.y);
+            context.DesiredHorizontalVelocity   = new Vector2(projected.x, projected.z);
+            context.rb.linearVelocity = new Vector3(context.DesiredHorizontalVelocity.x, downwardForce, context.DesiredHorizontalVelocity.y);
         }
 
         Vector3 GetProjected() {
             return Vector3.ProjectOnPlane(context.rb.linearVelocity, context.WallNormal).normalized * Mathf.Max(context.wallRunSpeed, context.rb.linearVelocity.magnitude);
         }
+
+        public override void Exit() => context.prevFloorPosY = context.rb.transform.position.y;
     }
 
     private class WallJumping : State<PlayerController>
@@ -640,10 +652,10 @@ public class PlayerController : Player.PlayerComponent
         public WallJumping(PlayerController context) : base(context) { }
 
         public override void Enter() {
-            Vector3 dir = context.playerCamera.CameraForwardNoY;
+            Vector3 dir = context.PlayerCamera.CameraForwardNoY;
             float dot   = Vector3.Dot(dir, context.WallNormal);
 
-            if (dot <= context.wallJumpMinDot)  dir = (context.playerCamera.CameraForwardNoY + context.WallNormal).normalized;
+            if (dot <= context.wallJumpMinDot)  dir = (context.PlayerCamera.CameraForwardNoY + context.WallNormal).normalized;
             if (dot <= context.wallJumpKickDot) dir = context.WallNormal;
 
             Vector3 vel = Quaternion.FromToRotation(context.rb.linearVelocity.normalized, dir) * context.rb.linearVelocity.normalized;
@@ -654,8 +666,8 @@ public class PlayerController : Player.PlayerComponent
 
             vel += Vector3.up * context.wallJumpHeight;
 
-            context.rb.linearVelocity = vel;
-            context.DesiredVelocity   = new Vector2(vel.x, vel.z);
+            context.rb.linearVelocity         = vel;
+            context.DesiredHorizontalVelocity = new Vector2(vel.x, vel.z);
         }
 
         public override void Update() {
@@ -709,7 +721,7 @@ public class PlayerController : Player.PlayerComponent
         public override void Enter() {
             context.DebugMode       = true;
             context.rb.linearVelocity     = Vector3.zero;
-            context.DesiredVelocity = Vector2.zero;
+            context.DesiredHorizontalVelocity = Vector2.zero;
         }
 
         public override void Update() {
@@ -735,7 +747,7 @@ public class PlayerController : Player.PlayerComponent
         public override void Enter() {
             context.DebugMode = true;
             context.rb.linearVelocity     = Vector3.zero;
-            context.DesiredVelocity = Vector2.zero;
+            context.DesiredHorizontalVelocity = Vector2.zero;
 
             Time.timeScale = 0;
         }
@@ -748,14 +760,14 @@ public class PlayerController : Player.PlayerComponent
             if (Input.GetKey(KeyCode.Space))     movePosition.y += 1;
             if (Input.GetKey(KeyCode.LeftShift)) movePosition.y -= 1;
 
-            Transform cam     = context.playerCamera.CameraTransform;
+            Transform cam     = context.PlayerCamera.CameraTransform;
             cam.localPosition = Vector3.MoveTowards(cam.localPosition, cam.localPosition + movePosition, Time.unscaledDeltaTime * context.DebugFlySpeed);
         }
 
         public override void Exit() {
             Time.timeScale    = 1;
             context.DebugMode = false;
-            context.playerCamera.CameraTransform.localPosition = Vector3.up * 0.5f;
+            context.PlayerCamera.CameraTransform.localPosition = Vector3.up * 0.5f;
         }
     }
 

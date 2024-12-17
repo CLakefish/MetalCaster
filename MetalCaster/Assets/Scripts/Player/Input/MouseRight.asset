@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9cf75a2f0ff3ee34aacd484970ac5587, type: 3}
+  m_Name: MouseRight
+  m_EditorClassIdentifier: 
+  action:
+    m_Name: MouseRight
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 24e58cd0-acf9-4a7f-b169-7d561e4afbeb
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings: []
+    m_Flags: 0
+  map: {fileID: 0}
+  bindName: MouseRight
+  locked: 0
+  held: 0
+  pressed: 0
+  released: 0

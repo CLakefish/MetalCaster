@@ -15,16 +15,8 @@ public class BoolInput : InputScriptableObject
 
     public override void Update()
     {
-        if (action.IsPressed())
-        {
-            pressed  = !held;
-            held     = true;
-        }
-        else
-        {
-            released = held;
-            pressed  = false;
-            held     = false;
-        }
+        pressed  = action.WasPressedThisFrame();
+        released = action.WasReleasedThisFrame();
+        held     = pressed || (held && !released);
     }
 }

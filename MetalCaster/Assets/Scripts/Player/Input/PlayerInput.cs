@@ -13,6 +13,8 @@ public class PlayerInput : Player.PlayerComponent
     [SerializeField] private Vector2Input viewInput;
     [SerializeField] private BoolInput jump;
     [SerializeField] private BoolInput slide;
+    [SerializeField] private BoolInput left;
+    [SerializeField] private BoolInput right;
     
     [Header("Variables")]
     [SerializeField] private Vector2 sensitivity;
@@ -62,11 +64,20 @@ public class PlayerInput : Player.PlayerComponent
         }
     }
 
+    public (BoolInput Left, BoolInput Right) Mouse {
+        get {
+            return (left, right);
+        }
+    }
+
     private void OnEnable()
     {
-        inputSet = new() { jump, moveInput, slide, viewInput };
+        inputSet = new() { jump, moveInput, slide, viewInput, left, right };
 
-        foreach (var action in inputSet) action.Initialize(map);
+        foreach (var action in inputSet) {
+            action.action.Enable();
+            action.Initialize(map);
+        }
     }
 
     private void Update()

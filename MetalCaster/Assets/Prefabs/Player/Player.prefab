@@ -170,7 +170,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 0.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 2770991285061393529}
+  - {fileID: 8840151988085244611}
   m_Father: {fileID: 7297169255658191882}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!20 &7629597577283122512
@@ -204,7 +206,7 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.3
+  near clip plane: 0.01
   far clip plane: 1000
   field of view: 60
   orthographic: 0
@@ -212,7 +214,7 @@ Camera:
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 55
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -253,6 +255,120 @@ MonoBehaviour:
   ditherer: {fileID: 4800000, guid: 6a9dadbdd135e1d4f9aba54ea72ea0e9, type: 3}
   spread: 0.7
   downSamples: 0
+--- !u!1 &4892770652245288622
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2770991285061393529}
+  - component: {fileID: 198139968923518383}
+  m_Layer: 2
+  m_Name: Viewmodel Camera
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2770991285061393529
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4892770652245288622}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4735785428930486040}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!20 &198139968923518383
+Camera:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4892770652245288622}
+  m_Enabled: 1
+  serializedVersion: 2
+  m_ClearFlags: 3
+  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_projectionMatrixMode: 1
+  m_GateFitMode: 2
+  m_FOVAxisMode: 0
+  m_Iso: 200
+  m_ShutterSpeed: 0.005
+  m_Aperture: 16
+  m_FocusDistance: 10
+  m_FocalLength: 50
+  m_BladeCount: 5
+  m_Curvature: {x: 2, y: 11}
+  m_BarrelClipping: 0.25
+  m_Anamorphism: 0
+  m_SensorSize: {x: 36, y: 24}
+  m_LensShift: {x: 0, y: 0}
+  m_NormalizedViewPortRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  near clip plane: 0.01
+  far clip plane: 10
+  field of view: 75
+  orthographic: 0
+  orthographic size: 5
+  m_Depth: 1
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 64
+  m_RenderingPath: -1
+  m_TargetTexture: {fileID: 0}
+  m_TargetDisplay: 0
+  m_TargetEye: 3
+  m_HDR: 1
+  m_AllowMSAA: 1
+  m_AllowDynamicResolution: 0
+  m_ForceIntoRT: 0
+  m_OcclusionCulling: 1
+  m_StereoConvergence: 10
+  m_StereoSeparation: 0.022
+--- !u!1 &7290438743851977148
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8840151988085244611}
+  m_Layer: 2
+  m_Name: Viewmodel Holder
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8840151988085244611
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7290438743851977148}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.5, y: -0.5, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4735785428930486040}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8621947090278987850
 GameObject:
   m_ObjectHideFlags: 0
@@ -263,6 +379,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5535380081666628709}
   - component: {fileID: 364814216178791576}
+  - component: {fileID: 7555448633199992023}
   - component: {fileID: 4968095787697594604}
   - component: {fileID: 341725526681868616}
   - component: {fileID: 5890483556396654734}
@@ -305,6 +422,25 @@ MonoBehaviour:
   playerMovement: {fileID: 3056770641862167720}
   playerCamera: {fileID: 5890483556396654734}
   playerInput: {fileID: 341725526681868616}
+  playerWeapon: {fileID: 7555448633199992023}
+--- !u!114 &7555448633199992023
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8621947090278987850}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce501063c7f7ce5478811ed937e89424, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  viewmodelHolder: {fileID: 8840151988085244611}
+  weapons:
+  - {fileID: 8281927643874827768, guid: 2f4e3710df6d4f3478c14c7e1fb41d73, type: 3}
+  collisionLayers:
+    serializedVersion: 2
+    m_Bits: 1
 --- !u!114 &4968095787697594604
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -352,6 +488,8 @@ MonoBehaviour:
   viewInput: {fileID: 11400000, guid: c884961f1894100479f058c170a6da08, type: 2}
   jump: {fileID: 11400000, guid: 7698e849747e60749b2c7d2c3944d833, type: 2}
   slide: {fileID: 11400000, guid: dcb7949b2ad8c7d46aa7c9dc99473729, type: 2}
+  left: {fileID: 11400000, guid: 9297424c1abbcd8448806e6304caf869, type: 2}
+  right: {fileID: 11400000, guid: 204ce4abaf8d973499e25a33af1d3d85, type: 2}
   sensitivity: {x: 0.25, y: 0.25}
   invertX: 0
   invertY: 0
@@ -370,19 +508,27 @@ MonoBehaviour:
   camera: {fileID: 7629597577283122512}
   viewRotationSmoothing: 0.2
   fov: 90
+  viewmodelRecoilHolder: {fileID: 8840151988085244611}
+  viewmodelRecoil: {x: 6, y: 12, z: 12}
+  viewmodelRecoilSpeed: 80
+  viewmodelReturnSpeed: 40
+  viewmodelKickbackSpeed: 1
+  viewmodelKickbackForce: 0.2
+  returnSpeed: 12.5
+  recoilSpeed: 100
   jumpBob:
     curve:
       serializedVersion: 2
       m_Curve:
       - serializedVersion: 3
-        time: -0.000042048516
-        value: -0.00155304
-        inSlope: -7.602586
-        outSlope: -7.602586
+        time: 0
+        value: 0
+        inSlope: -3.0156178
+        outSlope: -3.0156178
         tangentMode: 0
         weightedMode: 0
         inWeight: 0
-        outWeight: 0.011081181
+        outWeight: 0.00852531
       - serializedVersion: 3
         time: 0.2019914
         value: -0.41305965
@@ -414,6 +560,8 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
     speed: 1.5
+  jumpBobReduction: 10
+  jumpBobMaxIntensity: 2
   fovPulse:
     curve:
       serializedVersion: 2
@@ -421,12 +569,21 @@ MonoBehaviour:
       - serializedVersion: 3
         time: 0.0017046593
         value: -0.007083893
-        inSlope: 46.122093
-        outSlope: 46.122093
+        inSlope: 0.0724819
+        outSlope: 0.0724819
         tangentMode: 0
         weightedMode: 0
         inWeight: 0
-        outWeight: 0.0060428157
+        outWeight: 0.1915966
+      - serializedVersion: 3
+        time: 0.13118786
+        value: 4.9885826
+        inSlope: 13.910793
+        outSlope: 13.910793
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.061881192
       - serializedVersion: 3
         time: 1
         value: 0
@@ -482,10 +639,11 @@ MonoBehaviour:
   slideRotationSpeed: 0.75
   slideAcceleration: 14
   slideSlopeMomentumGain: 12
+  slideStickSpeed: 0.3
   slideJumpForce: 12
   crouchSize: 1
   standardSize: 2
-  crouchTime: 3
+  crouchTime: 2
   wallRunSpeed: 14
   wallRunMaxAngle: 75
   wallRunRotateGraceTime: 0.1
