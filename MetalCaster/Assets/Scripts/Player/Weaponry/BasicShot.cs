@@ -5,20 +5,11 @@ public class BasicShot : WeaponModification
 {
     [SerializeField] private GameObject hitSpawn;
 
-    public override void Modify(Weapon context) {
-        //context.weaponData.bulletsPerShot = context.weaponData.magazineSize;
-    }
-
     public override void OnFire(Weapon context) {
         context.context.GetCamera().Screenshake(1, 1);
     }
 
-    public override void OnReload(Weapon context)
-    {
-        context.weaponData.damage = 1;
-    }
-
-    public override void OnHit(Weapon context, RaycastHit hit)
+    public override void OnHit(Weapon context, RaycastHit hit, int bounceCount)
     {
         GameObject plane    = Instantiate(hitSpawn, hit.point + (hit.normal / 10.0f), Quaternion.identity);
 
@@ -34,8 +25,8 @@ public class BasicShot : WeaponModification
         plane.transform.rotation = rotation;
 
         Vector3 startPos  = context.PrevHit;
-        Vector3 reflected = Vector3.Reflect(hit.point - startPos, hit.normal).normalized;
+        Vector3 reflected = Vector3.Reflect((hit.point - startPos).normalized, hit.normal).normalized;
 
-        context.FireImmediate(hit.point, reflected);
+        context.FireImmediate(hit.point, reflected, bounceCount);
     }
 }

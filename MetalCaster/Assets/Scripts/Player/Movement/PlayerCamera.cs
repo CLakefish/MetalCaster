@@ -14,21 +14,17 @@ public class PlayerCamera : Player.PlayerComponent
     [Header("Viewmodel Recoil")]
     [SerializeField] private Transform viewmodelRecoilHolder;
     [SerializeField] private Vector3 viewmodelRecoil;
-    [SerializeField] private float viewmodelRecoilSpeed;
-    [SerializeField] private float viewmodelReturnSpeed;
-
-    [Header("Viewmodel Kickback")]
     [SerializeField] private float viewmodelKickbackSpeed;
     [SerializeField] private float viewmodelKickbackForce;
 
     [Header("Camera Recoil")]
-    [SerializeField] private float returnSpeed;
     [SerializeField] private float recoilSpeed;
 
     [Header("Jump Bob")]
     [SerializeField] private AnimCurve jumpBob;
     [SerializeField] private float jumpBobReduction;
     [SerializeField] private float jumpBobMaxIntensity;
+    [SerializeField] public float bobDelay;
 
     [Header("Slide Pulse")]
     [SerializeField] private AnimCurve fovPulse;
@@ -43,23 +39,20 @@ public class PlayerCamera : Player.PlayerComponent
 
     private const float standingHeight = 0.5f;
 
-    private Quaternion desiredRotation          = Quaternion.identity;
-    private Quaternion currentRotation          = Quaternion.identity;
-
-    private Quaternion desiredViewmodelRotation = Quaternion.identity;
-    private Quaternion currentViewmodelRotation = Quaternion.identity;
-
     private Coroutine screenShakeCoroutine;
 
     private Vector3 startPos;
     private Vector3 desiredPos;
+
+    private Vector3 recoil;
+
+    private Vector3 recoilVel;
     private Vector3 posVel;
 
     private Vector2 mouseRotation;
     private Vector2 viewTilt;
 
     private float baseFOV;
-    private float desiredZRotation;
     private float cameraVel;
 
     public Vector3 CameraForward { 
@@ -121,12 +114,12 @@ public class PlayerCamera : Player.PlayerComponent
 
     public void WallRunRotate(Vector3 normal)
     {
-        desiredZRotation = wallRunAngle * -Mathf.Sign(Vector3.SignedAngle(CameraForwardNoY, normal, Vector3.up)) * (1.0f - Mathf.Abs(Vector3.Dot(normal, CameraForward)));
+        recoil.z = wallRunAngle * -Mathf.Sign(Vector3.SignedAngle(CameraForwardNoY, normal, Vector3.up)) * (1.0f - Mathf.Abs(Vector3.Dot(normal, CameraForward)));
     }
 
     public void SlideRotate(Vector3 normal)
     {
-        desiredZRotation = slideAngle * -Mathf.Sign(Vector3.SignedAngle(CameraForwardNoY, normal.normalized, Vector3.up)) * (1.0f - Mathf.Abs(Vector3.Dot(normal.normalized, CameraForward)));
+        recoil.z = slideAngle * -Mathf.Sign(Vector3.SignedAngle(CameraForwardNoY, normal.normalized, Vector3.up)) * (1.0f - Mathf.Abs(Vector3.Dot(normal.normalized, CameraForward)));
     }
 
     public void ViewTilt()
@@ -134,16 +127,17 @@ public class PlayerCamera : Player.PlayerComponent
         viewTilt.x = -PlayerInput.Input.x * viewTiltAngle;
     }
 
-    public void Recoil(Vector3 recoil)
+    public void Recoil(Vector3 recoilAmount)
     {
-        Vector3 rand     = Random.insideUnitSphere;
-        desiredRotation *= Quaternion.Euler(-recoil.x, rand.y * recoil.y, rand.z * recoil.z);
+        Vector3 rand = Random.insideUnitSphere;
+        Vector3 rec  = new(recoilAmount.x, rand.y * recoilAmount.y, rand.z * recoilAmount.z);
+        recoil += rec;
     }
 
     public void ViewmodelRecoil()
     {
         Vector3 rand = Random.insideUnitSphere;
-        desiredViewmodelRotation *= Quaternion.Euler(-viewmodelRecoil.x, rand.y * viewmodelRecoil.y, rand.z * viewmodelRecoil.z);
+       // desiredViewmodelRotation *= Quaternion.Euler(-viewmodelRecoil.x, rand.y * viewmodelRecoil.y, rand.z * viewmodelRecoil.z);
         desiredPos -= viewmodelKickbackForce * Vector3.forward;
     }
 
@@ -159,7 +153,7 @@ public class PlayerCamera : Player.PlayerComponent
 
         while (Time.time < start + duration)
         {
-            desiredZRotation = Random.insideUnitCircle.x * intensity;
+            recoil.z = Random.insideUnitCircle.x * intensity;
             yield return null;
         }
     }
@@ -176,24 +170,19 @@ public class PlayerCamera : Player.PlayerComponent
 
     private void Update()
     {
-        mouseRotation.x  = Mathf.Clamp(mouseRotation.x - PlayerInput.AlteredMousePosition.y, -89f, 89f);
-        mouseRotation.y += PlayerInput.AlteredMousePosition.x;
+        mouseRotation.x  = Mathf.Clamp(mouseRotation.x - PlayerInput.AlteredMousePosition.y - recoil.x, -89f, 89f);
+        mouseRotation.y += PlayerInput.AlteredMousePosition.x + recoil.y;
 
-        float currentZ   = Mathf.SmoothDampAngle(camera.transform.localEulerAngles.z, desiredZRotation + viewTilt.x, ref cameraVel, viewRotationSmoothing);
-        desiredZRotation = 0;
-        viewTilt         = Vector2.zero;
+        float currentZ = Mathf.SmoothDampAngle(camera.transform.localEulerAngles.z, recoil.z + viewTilt.x, ref cameraVel, viewRotationSmoothing);
+        viewTilt       = Vector2.zero;
 
-        desiredRotation          = Quaternion.RotateTowards(desiredRotation, Quaternion.Euler(Vector3.zero), Time.deltaTime * returnSpeed);
-        currentRotation          = Quaternion.RotateTowards(currentRotation, desiredRotation, Time.deltaTime * recoilSpeed);
+        recoil   = Vector3.SmoothDamp(recoil, Vector3.zero, ref recoilVel, recoilSpeed);
+        recoil.z = 0;
 
-        desiredViewmodelRotation = Quaternion.RotateTowards(desiredViewmodelRotation, Quaternion.Euler(Vector3.zero), Time.deltaTime * viewmodelReturnSpeed);
-        currentViewmodelRotation = Quaternion.RotateTowards(currentViewmodelRotation, desiredViewmodelRotation,       Time.deltaTime * viewmodelRecoilSpeed);
-        desiredPos               = Vector3.SmoothDamp(desiredPos, startPos, ref posVel, viewmodelKickbackSpeed);
+        camera.transform.localRotation = Quaternion.Euler(new Vector3(mouseRotation.x, mouseRotation.y, currentZ));
 
-        camera.transform.localRotation     = Quaternion.Euler(new Vector3(mouseRotation.x, mouseRotation.y, currentZ));
-        camera.transform.localEulerAngles += currentRotation.eulerAngles;
+        desiredPos = Vector3.SmoothDamp(desiredPos, startPos, ref posVel, viewmodelKickbackSpeed);
 
-        viewmodelRecoilHolder.transform.localRotation = desiredViewmodelRotation;
         viewmodelRecoilHolder.transform.localPosition = desiredPos;
     }
 }

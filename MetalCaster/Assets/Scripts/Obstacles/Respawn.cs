@@ -26,7 +26,7 @@ public class Respawn : MonoBehaviour
     private void OnTriggerEnter(Collider other) => Spawn(other);
     private void OnTriggerStay(Collider other)  => Spawn(other);
 
-    private void Spawn(Collider other)
+    public void Spawn(Collider other)
     {
         other.transform.position = spawnPos;
         if (other.attachedRigidbody != null) other.attachedRigidbody.linearVelocity = new Vector3(other.attachedRigidbody.linearVelocity.x, 0, other.attachedRigidbody.linearVelocity.z);

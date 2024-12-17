@@ -7,6 +7,7 @@ public class AnimCurve
 {
     [SerializeField] private AnimationCurve curve;
     [SerializeField] private float speed = 1;
+    [SerializeField] private bool loop;
     private float totalTime = 0;
 
     public Coroutine Coroutine { get; set; }
@@ -21,6 +22,9 @@ public class AnimCurve
 
     public float Continue(float dT) {
         totalTime += dT * speed;
+
+        if (loop) totalTime %= curve[curve.length - 1].time;
+
         return curve.Evaluate(totalTime);
     }
 

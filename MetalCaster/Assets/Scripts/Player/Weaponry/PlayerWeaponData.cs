@@ -18,6 +18,7 @@ public class PlayerWeaponData : ScriptableObject
     [Header("Weapon Data")]
     [SerializeField] public int damage;
     [SerializeField] public int magazineSize;
+    [SerializeField] public float shotDeviation;
     [SerializeField] public int bulletsPerShot = 1;
     [SerializeField] public int bounceCount    = 0;
     [SerializeField] public ProjectileType type;
@@ -32,13 +33,14 @@ public class PlayerWeaponData : ScriptableObject
     [Header("Debugging")]
     [HideInInspector] public int shotCount = 0;
     [HideInInspector] public float prevFireTime = 0;
-    [HideInInspector] public float currentBounce = 0;
 
     public bool Unlocked => unlocked;
 
     public void Set(PlayerWeaponData other)
     {
-        if (other == this) return;
+        if (other == this || other == null) return;
+
+        // Could use reflection, although this is faster. If you really wanted to, use typeof().GetFields() and iterate :)
 
         this.damage         = other.damage;
         this.magazineSize   = other.magazineSize;
@@ -49,5 +51,6 @@ public class PlayerWeaponData : ScriptableObject
         this.bulletsPerShot = other.bulletsPerShot;
         this.recoil         = other.recoil;
         this.bounceCount    = other.bounceCount;
+        this.shotDeviation  = other.shotDeviation;
     }
 }

@@ -29,7 +29,8 @@ namespace HFSMFramework
         public IState PreviousState          { get; private set; }
         public float Duration                { get; private set; }
 
-        public Dictionary<IState, List<Transition>> Transitions = new();
+        private readonly Dictionary<IState, List<Transition>> Transitions = new();
+        private readonly List<System.Action> onChange = new();
 
         protected T context;
 
@@ -73,6 +74,8 @@ namespace HFSMFramework
             }
         }
 
+        public void AddOnChange(List<System.Action> actions) => onChange.AddRange(actions);
+
         public void Update()
         {
             CurrentState?.Update();
@@ -88,6 +91,8 @@ namespace HFSMFramework
         {
             PreviousState = CurrentState;
             CurrentState?.Exit();
+
+            foreach (var action in onChange) action?.Invoke();
 
             Duration = 0;
 

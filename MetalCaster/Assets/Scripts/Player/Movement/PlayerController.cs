@@ -6,7 +6,14 @@ using UnityEngine;
 // Concept recommendations and help by Oliver Beebe
 
 // TODO:
-// - GUNS
+// - Viewmodel Juice
+// - FOV Pulsing
+// - Weapon Swapping
+// - Weapon Modification testing
+// - Weapon modification in game UI
+// - Saving/loading modifications
+// - Save system
+// - UI
 
 public class PlayerController : Player.PlayerComponent
 {
@@ -151,19 +158,26 @@ public class PlayerController : Player.PlayerComponent
     private bool AllowWallRun {
         get {
             float angle = Vector3.SignedAngle(WallNormal, ViewPositionNoY, Vector3.up);
-            return Mathf.Abs(angle) > wallRunMaxAngle;
+            bool isWall = Vector3.Angle(Vector3.up, WallNormal) >= 89.0f;
+            return Mathf.Abs(angle) > wallRunMaxAngle && isWall;
         }
     }
 
-    public IState CurrentState {
+    private IState CurrentState {
         get {
             return hfsm.CurrentState;
         }
     }
 
-    public IState PreviousState  {
+    private IState PreviousState  {
         get {
             return hfsm.PreviousState;
+        }
+    }
+
+    private float PreviousDuration {
+        get {
+            return previousDuration;
         }
     }
 
@@ -171,7 +185,8 @@ public class PlayerController : Player.PlayerComponent
     private Coroutine sizeChange = null;
     private bool slideBoost = true;
 
-    private float jumpBufferTime = 0;
+    private float previousDuration = 0;
+    private float jumpBufferTime   = 0;
     private float prevFloorPosY;
 
 
@@ -243,6 +258,11 @@ public class PlayerController : Player.PlayerComponent
 #endif
         });
 
+        hfsm.AddOnChange(new()
+        {  
+            () => previousDuration = hfsm.Duration,
+        });
+
         hfsm.Start(Falling);
     }
 
@@ -289,7 +309,6 @@ public class PlayerController : Player.PlayerComponent
         Vector3 setVelocity = new (DesiredHorizontalVelocity.x, rb.linearVelocity.y, DesiredHorizontalVelocity.y);
 
         if (SlopeCollision && CurrentState == Grounded) {
-            setVelocity.y = 0;
             setVelocity   = Quaternion.FromToRotation(Vector3.up, GroundNormal) * setVelocity;
         }
 
@@ -307,16 +326,12 @@ public class PlayerController : Player.PlayerComponent
             Vector3 dir           = (interpolated.point - rb.transform.position).normalized;
             Vector3 desiredNormal = interpolated.normal;
 
-            // SphereCast interpolates the floor normal, resulting in a jitter when relying soly on it. So, to fix this I use 2 raycasts
-            // 1. Is used to derive the nonInterpolated floor normal
-            // 2. Is to ensure that the interpolated floor normal is used on sharp ground changes (makes it so much smoother)
             if (Physics.Raycast(rb.transform.position, dir, out RaycastHit nonInterpolated, dir.magnitude + raycastMargin, layers)) {
                 // FUCKKKKK!!!!
                 if (Vector3.Angle(Vector3.up, nonInterpolated.normal) >= 90) {
                     desiredNormal = Vector3.up;
                 }
-                else
-                {
+                else {
                     float interpAngle    = Vector3.Angle(Vector3.up, interpolated.normal);
                     float nonInterpAngle = Vector3.Angle(Vector3.up, nonInterpolated.normal);
 
@@ -330,7 +345,7 @@ public class PlayerController : Player.PlayerComponent
             GroundNormal    = Vector3.MoveTowards(GroundNormal, desiredNormal, Time.fixedDeltaTime * interpolateNormalSpeed);
             GroundPoint     = interpolated.point;
             GroundCollision = true;
-            SlopeCollision  = angle > 0 && angle < 90;
+            SlopeCollision  = angle > 0;
             return;
         }
 
@@ -395,8 +410,9 @@ public class PlayerController : Player.PlayerComponent
         public GroundedState(PlayerController context) : base(context) { }
 
         public override void Enter() {
-            if (context.PreviousState != context.Sliding) 
+            if (context.PreviousState != context.Sliding && context.PreviousDuration > context.PlayerCamera.bobDelay) {
                 context.PlayerCamera.JumpBob(Mathf.Abs(context.prevFloorPosY - context.GroundPoint.y));
+            }
 
             context.slideBoost = true;
             stickVel           = Vector3.zero;
@@ -460,16 +476,14 @@ public class PlayerController : Player.PlayerComponent
     private class SlidingState : State<PlayerController>
     {
         private Vector3 momentum;
-        private Vector3 stickVel;
+        private float yVel;
         public SlidingState(PlayerController context) : base(context) { }
 
         public override void Enter() {
             momentum = context.rb.linearVelocity;
 
-            if (context.PreviousState != context.Grounded) context.PlayerCamera.JumpBob();
-
             if (context.slideBoost && context.HorizontalVelocity.magnitude <= context.slideForce) {
-                context.PlayerCamera.FOVPulse();
+                if (context.PlayerInput.IsInputting) context.PlayerCamera.FOVPulse();
 
                 if (context.SlopeCollision) {
                     Vector3 dir = (context.ViewPositionNoY * context.slideForce) + (context.gravity * Time.fixedDeltaTime * Vector3.down);
@@ -483,7 +497,10 @@ public class PlayerController : Player.PlayerComponent
             context.rb.linearVelocity         = momentum;
             context.DesiredHorizontalVelocity = new Vector2(momentum.x, momentum.z);
             context.slideBoost                = false;
-            stickVel                          = Vector3.zero;
+
+            if (context.PreviousState != context.Grounded && context.PreviousDuration > context.PlayerCamera.bobDelay) {
+                context.PlayerCamera.JumpBob();
+            }
         }
 
         public override void Update() => context.PlayerCamera.SlideRotate(momentum);
@@ -531,21 +548,8 @@ public class PlayerController : Player.PlayerComponent
                 }
             }
             
-            if (new Vector2(context.rb.linearVelocity.x, context.rb.linearVelocity.z).magnitude <= context.slideForce)
-            {
-                float halfSize = context.Size / 2.0f;
-                float yPos = context.Position.y - halfSize - context.GroundPoint.y;
-                float yCheck = context.floorStickThreshold;
-                Vector3 targetPos = new(context.Position.x, context.GroundPoint.y + halfSize, context.Position.z);
-
-                if (yPos > yCheck)
-                {
-                    Vector3 currentPos = context.rb.position;
-                    Vector3 smoothPos = Vector3.SmoothDamp(currentPos, targetPos, ref stickVel, context.slideStickSpeed, Mathf.Infinity, Time.fixedDeltaTime);
-                    context.rb.MovePosition(smoothPos);
-                }
-
-                momentum.y = Mathf.Min(momentum.y, 0);
+            if (new Vector2(context.rb.linearVelocity.x, context.rb.linearVelocity.z).magnitude <= context.slideForce) {
+                momentum.y = Mathf.SmoothDamp(momentum.y, Mathf.Min(momentum.y, 0), ref yVel, context.groundStickSpeed);
             }
 
             context.rb.linearVelocity         = momentum;
@@ -580,6 +584,8 @@ public class PlayerController : Player.PlayerComponent
 
     #region Wall_States
 
+    // Get angle between current velocity and other normal, if you're currently not on a wall or the angle is too large of a difference ensure its not snapped to the wall if the dot doesnt allow
+    // Could probably simplify the logic above, just spitballing is all
     private class WallRunning : State<PlayerController>
     {
         private Vector3 prevForward;
@@ -636,8 +642,8 @@ public class PlayerController : Player.PlayerComponent
                 ? context.rb.linearVelocity.y - (context.gravity * Time.fixedDeltaTime)
                 : context.rb.linearVelocity.y - (context.wallRunGravity * Time.fixedDeltaTime);
 
-            context.DesiredHorizontalVelocity   = new Vector2(projected.x, projected.z);
-            context.rb.linearVelocity = new Vector3(context.DesiredHorizontalVelocity.x, downwardForce, context.DesiredHorizontalVelocity.y);
+            context.DesiredHorizontalVelocity = new Vector2(projected.x, projected.z);
+            context.rb.linearVelocity         = new Vector3(context.DesiredHorizontalVelocity.x, downwardForce, context.DesiredHorizontalVelocity.y);
         }
 
         Vector3 GetProjected() {
@@ -655,8 +661,11 @@ public class PlayerController : Player.PlayerComponent
             Vector3 dir = context.PlayerCamera.CameraForwardNoY;
             float dot   = Vector3.Dot(dir, context.WallNormal);
 
-            if (dot <= context.wallJumpMinDot)  dir = (context.PlayerCamera.CameraForwardNoY + context.WallNormal).normalized;
-            if (dot <= context.wallJumpKickDot) dir = context.WallNormal;
+            if (context.WallCollision)
+            {
+                if (dot <= context.wallJumpMinDot)  dir = (context.PlayerCamera.CameraForwardNoY + context.WallNormal).normalized;
+                if (dot <= context.wallJumpKickDot) dir = context.WallNormal;
+            }
 
             Vector3 vel = Quaternion.FromToRotation(context.rb.linearVelocity.normalized, dir) * context.rb.linearVelocity.normalized;
 

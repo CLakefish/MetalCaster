@@ -54,38 +54,36 @@ public class Weapon : MonoBehaviour
         PrevHit = context.GetCamera().CameraTransform.position;
         weaponData.prevFireTime = Time.time;
 
-        weaponData.currentBounce = weaponData.bounceCount;
-
         context.GetCamera().Recoil(weaponData.recoil);
         context.GetCamera().ViewmodelRecoil();
 
-        FireImmediate(PrevHit, context.GetCamera().CameraForward);
-    }
-
-    public void FireImmediate(Vector3 pos, Vector3 dir)
-    {
-        if (weaponData.currentBounce < 0) return;
-        weaponData.currentBounce--;
-
         for (int i = 0; i < weaponData.bulletsPerShot; ++i)
         {
+            weaponData.shotCount--;
+
             if (weaponData.shotCount <= 0) break;
 
-            foreach (var mod in permanentModifications) mod.OnFire(this);
-            foreach (var mod in modifications) mod.OnFire(this);
+            FireImmediate(PrevHit, context.GetCamera().CameraForward, weaponData.bounceCount);
+        }
+    }
 
-            if (weaponData.type == PlayerWeaponData.ProjectileType.Raycast)
+    public void FireImmediate(Vector3 pos, Vector3 dir, int bounceCount)
+    {
+        if (bounceCount < 0) return;
+        bounceCount--;
+
+        foreach (var mod in permanentModifications) mod.OnFire(this);
+        foreach (var mod in modifications)          mod.OnFire(this);
+
+        if (weaponData.type == PlayerWeaponData.ProjectileType.Raycast)
+        {
+            if (Physics.Raycast(pos, dir + (Random.insideUnitSphere * weaponData.shotDeviation), out RaycastHit hit, Mathf.Infinity, context.CollisionLayers))
             {
-                if (Physics.Raycast(pos, dir, out RaycastHit hit, Mathf.Infinity, context.CollisionLayers))
-                {
-                    foreach (var mod in permanentModifications) mod.OnHit(this, hit);
-                    foreach (var mod in modifications) mod.OnHit(this, hit);
+                foreach (var mod in permanentModifications) mod.OnHit(this, hit, bounceCount);
+                foreach (var mod in modifications)          mod.OnHit(this, hit, bounceCount);
 
-                    PrevHit = hit.point;
-                }
+                PrevHit = hit.point;
             }
-
-            weaponData.shotCount = (int)Mathf.Clamp(weaponData.shotCount - 1, 0, Mathf.Infinity);
         }
     }
 

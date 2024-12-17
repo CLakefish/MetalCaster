@@ -30,7 +30,12 @@ public class PlayerWeapon : Player.PlayerComponent
 
     private void SelectWeapon()
     {
-        if (Selected.Viewmodel != null) Destroy(Selected.Viewmodel);
+        if (Selected.Viewmodel != null)
+        {
+            Destroy(Selected.Viewmodel);
+            Selected.Viewmodel = null;
+            Selected.Weapon    = null;
+        }
 
         Selected.Viewmodel = Instantiate(weapons[selectedIndex].gameObject, viewmodelHolder, false);
         Selected.Weapon    = Selected.Viewmodel.GetComponent<Weapon>();

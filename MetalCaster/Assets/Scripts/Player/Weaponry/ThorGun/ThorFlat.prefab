@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 7073664659964174940}
   - component: {fileID: 2802153233999527051}
   - component: {fileID: 7547433994549071955}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: ThorFlat
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -208,7 +208,7 @@ GameObject:
   - component: {fileID: 1520380118294914021}
   - component: {fileID: 3068975599615411247}
   - component: {fileID: 7629633620239169096}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Particle System
   m_TagString: Untagged
   m_Icon: {fileID: 0}

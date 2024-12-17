@@ -29,7 +29,7 @@ Transform:
   m_GameObject: {fileID: 2594694779388192825}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalPosition: {x: -5.42, y: 1, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -363,7 +363,7 @@ Transform:
   m_GameObject: {fileID: 7290438743851977148}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.5, y: -0.5, z: 1}
+  m_LocalPosition: {x: 0.5, y: -0.35, z: 1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -510,12 +510,9 @@ MonoBehaviour:
   fov: 90
   viewmodelRecoilHolder: {fileID: 8840151988085244611}
   viewmodelRecoil: {x: 6, y: 12, z: 12}
-  viewmodelRecoilSpeed: 80
-  viewmodelReturnSpeed: 40
-  viewmodelKickbackSpeed: 1
-  viewmodelKickbackForce: 0.2
-  returnSpeed: 12.5
-  recoilSpeed: 100
+  viewmodelKickbackSpeed: 0.2
+  viewmodelKickbackForce: 0.15
+  recoilSpeed: 0.05
   jumpBob:
     curve:
       serializedVersion: 2
@@ -560,8 +557,10 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
     speed: 1.5
+    loop: 0
   jumpBobReduction: 10
   jumpBobMaxIntensity: 2
+  bobDelay: 0.1
   fovPulse:
     curve:
       serializedVersion: 2
@@ -597,6 +596,7 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
     speed: 1
+    loop: 0
   slideAngle: 10
   viewTiltAngle: 2
   wallRunAngle: 12.5
@@ -618,8 +618,8 @@ MonoBehaviour:
   layers:
     serializedVersion: 2
     m_Bits: 1
-  groundCastDist: 1
-  fallingCastDist: 1
+  groundCastDist: 1.1
+  fallingCastDist: 0.75
   wallCastIncrements: 8
   wallCastDistance: 0.6
   interpolateNormalSpeed: 25

@@ -15,12 +15,12 @@ MonoBehaviour:
   unlocked: 1
   damage: 1
   magazineSize: 12
-  bulletsPerShot: 1
-  bounceCount: 5
+  shotDeviation: 0.1
+  bulletsPerShot: 2
+  bounceCount: 3
   type: 0
   fireTime: 0.2
-  reloadTime: 1
-  recoil: {x: 3, y: 0.25, z: 0.25}
+  reloadTime: 0.5
+  recoil: {x: 1, y: 0.1, z: 0.1}
   shotCount: 0
   prevFireTime: 0
-  currentBounce: 0
