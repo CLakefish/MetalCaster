@@ -15,12 +15,13 @@ public class Weapon : MonoBehaviour
     private Coroutine reloadCoroutine;
     private bool reloading = false;
 
-    public PlayerWeapon context;
+    public PlayerWeapon playerWeapon;
     public Vector3 PrevHit { get; private set; }
 
     public void OnEnable() => ReloadModifications();
 
-    public void Equip() {
+    public void Equip(PlayerWeapon context) {
+        playerWeapon = context;
         Debug.Log("Equipped");
     }
 
@@ -41,8 +42,6 @@ public class Weapon : MonoBehaviour
 
     public void Fire(PlayerWeapon context)
     {
-        this.context = context;
-
         if (Time.time < weaponData.fireTime + weaponData.prevFireTime) return;
 
         if (reloading)
@@ -77,12 +76,17 @@ public class Weapon : MonoBehaviour
 
         if (weaponData.type == PlayerWeaponData.ProjectileType.Raycast)
         {
-            if (Physics.Raycast(pos, dir + (Random.insideUnitSphere * weaponData.shotDeviation), out RaycastHit hit, Mathf.Infinity, context.CollisionLayers))
+            if (Physics.Raycast(pos, dir + (Random.insideUnitSphere * weaponData.shotDeviation), out RaycastHit hit, Mathf.Infinity, playerWeapon.CollisionLayers))
             {
                 foreach (var mod in permanentModifications) mod.OnHit(this, hit, bounceCount);
                 foreach (var mod in modifications)          mod.OnHit(this, hit, bounceCount);
 
                 PrevHit = hit.point;
+            }
+            else
+            {
+                foreach (var mod in permanentModifications) mod.OnMiss(this);
+                foreach (var mod in modifications)          mod.OnMiss(this);
             }
         }
     }

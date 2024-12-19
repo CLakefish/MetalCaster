@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9cf75a2f0ff3ee34aacd484970ac5587, type: 3}
-  m_Name: MouseRight
+  m_Name: Slot 2
   m_EditorClassIdentifier: 
   action:
     m_Name: MouseRight
@@ -22,7 +22,7 @@ MonoBehaviour:
     m_SingletonActionBindings: []
     m_Flags: 0
   map: {fileID: 0}
-  bindName: MouseRight
+  bindName: Slot2
   locked: 0
   held: 0
   pressed: 0

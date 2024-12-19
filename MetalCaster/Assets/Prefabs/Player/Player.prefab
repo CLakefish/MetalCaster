@@ -438,6 +438,7 @@ MonoBehaviour:
   viewmodelHolder: {fileID: 8840151988085244611}
   weapons:
   - {fileID: 8281927643874827768, guid: 2f4e3710df6d4f3478c14c7e1fb41d73, type: 3}
+  - {fileID: 8281927643874827768, guid: b4c95a5331ef11c42b730279e5a66ee2, type: 3}
   collisionLayers:
     serializedVersion: 2
     m_Bits: 1
@@ -490,6 +491,9 @@ MonoBehaviour:
   slide: {fileID: 11400000, guid: dcb7949b2ad8c7d46aa7c9dc99473729, type: 2}
   left: {fileID: 11400000, guid: 9297424c1abbcd8448806e6304caf869, type: 2}
   right: {fileID: 11400000, guid: 204ce4abaf8d973499e25a33af1d3d85, type: 2}
+  slot1: {fileID: 11400000, guid: 5a681eeb6ca29314987d791d61aba4ae, type: 2}
+  slot2: {fileID: 11400000, guid: c1ff080d2b0e9a04ca60fe3a7cac89ee, type: 2}
+  slot3: {fileID: 11400000, guid: 97c9835b6e2b2e7488fc9303433fff28, type: 2}
   sensitivity: {x: 0.25, y: 0.25}
   invertX: 0
   invertY: 0
@@ -505,7 +509,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c9f68aab6ccfc1f4f8e7bdc183d0e991, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  camera: {fileID: 7629597577283122512}
+  cam: {fileID: 7629597577283122512}
   viewRotationSmoothing: 0.2
   fov: 90
   viewmodelRecoilHolder: {fileID: 8840151988085244611}
@@ -529,11 +533,11 @@ MonoBehaviour:
       - serializedVersion: 3
         time: 0.2019914
         value: -0.41305965
-        inSlope: 1.1174923
-        outSlope: 1.1174923
+        inSlope: 0.7432021
+        outSlope: 0.7432021
         tangentMode: 0
         weightedMode: 0
-        inWeight: 0.080386646
+        inWeight: 0.24791801
         outWeight: 0.18292363
       - serializedVersion: 3
         time: 0.58692014
@@ -568,23 +572,23 @@ MonoBehaviour:
       - serializedVersion: 3
         time: 0.0017046593
         value: -0.007083893
-        inSlope: 0.0724819
-        outSlope: 0.0724819
+        inSlope: 27.456503
+        outSlope: 27.456503
         tangentMode: 0
         weightedMode: 0
         inWeight: 0
-        outWeight: 0.1915966
+        outWeight: 0.3278221
       - serializedVersion: 3
-        time: 0.13118786
-        value: 4.9885826
-        inSlope: 13.910793
-        outSlope: 13.910793
+        time: 0.19474144
+        value: 6.479757
+        inSlope: 0.008779062
+        outSlope: 0.008779062
         tangentMode: 0
         weightedMode: 0
         inWeight: 0.33333334
-        outWeight: 0.061881192
+        outWeight: 0.33333334
       - serializedVersion: 3
-        time: 1
+        time: 1.5
         value: 0
         inSlope: 0
         outSlope: 0
@@ -598,8 +602,8 @@ MonoBehaviour:
     speed: 1
     loop: 0
   slideAngle: 10
-  viewTiltAngle: 2
-  wallRunAngle: 12.5
+  viewTiltAngle: 2.5
+  wallRunAngle: 14
   wallRunRotationSpeed: 0.125
 --- !u!114 &3056770641862167720
 MonoBehaviour:
@@ -619,7 +623,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1
   groundCastDist: 1.1
-  fallingCastDist: 0.75
+  fallingCastDist: 0.8
   wallCastIncrements: 8
   wallCastDistance: 0.6
   interpolateNormalSpeed: 25
@@ -647,12 +651,12 @@ MonoBehaviour:
   wallRunSpeed: 14
   wallRunMaxAngle: 75
   wallRunRotateGraceTime: 0.1
-  wallRunGravity: 3.5
+  wallRunGravity: 10
   wallJumpForce: 18
   wallJumpHeight: 15
   wallJumpTime: 0.2
-  wallJumpCoyoteTime: 0.2
-  wallJumpMinDot: 0.25
+  wallJumpCoyoteTime: 0.15
+  wallJumpMinDot: 0.2
   wallJumpKickDot: -0.8
   DebugFlySpeed: 10
   scrollWheelSpeed: 4

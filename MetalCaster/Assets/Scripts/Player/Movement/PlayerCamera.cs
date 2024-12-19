@@ -5,7 +5,7 @@ using UnityEngine;
 public class PlayerCamera : Player.PlayerComponent
 {
     [Header("References")]
-    [SerializeField] private Camera camera;
+    [SerializeField] private Camera cam;
 
     [Header("Camera Control")]
     [SerializeField] private float viewRotationSmoothing = 0.2f;
@@ -55,27 +55,31 @@ public class PlayerCamera : Player.PlayerComponent
     private float baseFOV;
     private float cameraVel;
 
+    public Camera Camera {
+        get { return cam; }
+    }
+
     public Vector3 CameraForward { 
         get { 
-            return camera.transform.forward;
+            return cam.transform.forward;
         }
     }
 
     public Vector3 CameraForwardNoY { 
         get { 
-            return new Vector3(camera.transform.forward.x, 0, camera.transform.forward.z).normalized; 
+            return new Vector3(cam.transform.forward.x, 0, cam.transform.forward.z).normalized; 
         } 
     }
 
     public Vector3 CameraRight { 
         get {
-            return camera.transform.right;   
+            return cam.transform.right;   
         }
     }
 
     public Transform CameraTransform { 
         get { 
-            return camera.transform; 
+            return cam.transform; 
         } 
     }
 
@@ -83,7 +87,7 @@ public class PlayerCamera : Player.PlayerComponent
         get { return fov; }
         set {
             fov = value;
-            camera.fieldOfView = fov;
+            cam.fieldOfView = fov;
         }
     }
 
@@ -97,10 +101,10 @@ public class PlayerCamera : Player.PlayerComponent
     public void JumpBob(float intensity = 1) {
         if (jumpBob.Coroutine != null) StopCoroutine(jumpBob.Coroutine);
 
-        intensity = Mathf.Clamp(intensity / jumpBobReduction, 1, jumpBobMaxIntensity);
+        intensity = Mathf.Clamp(intensity / jumpBobReduction, 1.0f, jumpBobMaxIntensity);
 
         jumpBob.Coroutine = StartCoroutine(jumpBob.Run(() => { 
-            camera.transform.localPosition = (intensity * jumpBob.Continue(Time.deltaTime) * Vector3.up) + ((PlayerMovement.col.height / 2.0f) * standingHeight * Vector3.up);
+            cam.transform.position = (intensity * jumpBob.Continue(Time.deltaTime) * Vector3.up) + PlayerMovement.rb.transform.position + (Vector3.up * standingHeight);
         }));
     }
 
@@ -170,16 +174,17 @@ public class PlayerCamera : Player.PlayerComponent
 
     private void Update()
     {
-        mouseRotation.x  = Mathf.Clamp(mouseRotation.x - PlayerInput.AlteredMousePosition.y - recoil.x, -89f, 89f);
-        mouseRotation.y += PlayerInput.AlteredMousePosition.x + recoil.y;
+        mouseRotation.x  = Mathf.Clamp(mouseRotation.x - PlayerInput.AlteredMouseDelta.y - recoil.x, -89f, 89f);
+        mouseRotation.y += PlayerInput.AlteredMouseDelta.x + recoil.y;
 
-        float currentZ = Mathf.SmoothDampAngle(camera.transform.localEulerAngles.z, recoil.z + viewTilt.x, ref cameraVel, viewRotationSmoothing);
+        float currentZ = Mathf.SmoothDampAngle(cam.transform.localEulerAngles.z, recoil.z + viewTilt.x, ref cameraVel, viewRotationSmoothing);
         viewTilt       = Vector2.zero;
 
         recoil   = Vector3.SmoothDamp(recoil, Vector3.zero, ref recoilVel, recoilSpeed);
         recoil.z = 0;
 
-        camera.transform.localRotation = Quaternion.Euler(new Vector3(mouseRotation.x, mouseRotation.y, currentZ));
+        cam.transform.localRotation = Quaternion.Euler(new Vector3(mouseRotation.x, mouseRotation.y, currentZ));
+        cam.transform.position      = PlayerMovement.rb.transform.position + (Vector3.up * standingHeight);
 
         desiredPos = Vector3.SmoothDamp(desiredPos, startPos, ref posVel, viewmodelKickbackSpeed);
 

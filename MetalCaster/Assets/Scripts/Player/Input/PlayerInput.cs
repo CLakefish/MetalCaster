@@ -8,14 +8,19 @@ public class PlayerInput : Player.PlayerComponent
     [Header("Map")]
     [SerializeField] private UnityEngine.InputSystem.PlayerInput map;
 
-    [Header("Inputs")]
+    [Header("Movement")]
     [SerializeField] private Vector2Input moveInput;
     [SerializeField] private Vector2Input viewInput;
     [SerializeField] private BoolInput jump;
     [SerializeField] private BoolInput slide;
+
+    [Header("Weaponry")]
     [SerializeField] private BoolInput left;
     [SerializeField] private BoolInput right;
-    
+    [SerializeField] private BoolInput slot1;
+    [SerializeField] private BoolInput slot2;
+    [SerializeField] private BoolInput slot3;
+
     [Header("Variables")]
     [SerializeField] private Vector2 sensitivity;
     [SerializeField] private bool invertX;
@@ -34,15 +39,15 @@ public class PlayerInput : Player.PlayerComponent
         } 
     }
 
-    public Vector2 MousePosition { 
+    public Vector2 MouseDelta { 
         get { 
             return viewInput.Value; 
         } 
     }
 
-    public Vector2 AlteredMousePosition { 
+    public Vector2 AlteredMouseDelta { 
         get { 
-            return new Vector2(MousePosition.x * (invertX ? -1 : 1) * sensitivity.x, MousePosition.y * (invertY ? -1 : 1) * sensitivity.y);
+            return new Vector2(MouseDelta.x * (invertX ? -1 : 1) * sensitivity.x, MouseDelta.y * (invertY ? -1 : 1) * sensitivity.y);
         } 
     }
 
@@ -70,9 +75,21 @@ public class PlayerInput : Player.PlayerComponent
         }
     }
 
+    public (BoolInput One, BoolInput Two, BoolInput Three) Slot {
+        get {
+            return (slot1, slot2, slot3);
+        }
+    }
+
+    public bool SlotPressed {
+        get { 
+            return slot1.Pressed || slot2.Pressed || slot3.Pressed;
+        }
+    }
+
     private void OnEnable()
     {
-        inputSet = new() { jump, moveInput, slide, viewInput, left, right };
+        inputSet = new() { jump, moveInput, slide, viewInput, left, right, slot1, slot2, slot3 };
 
         foreach (var action in inputSet) {
             action.action.Enable();
@@ -80,8 +97,7 @@ public class PlayerInput : Player.PlayerComponent
         }
     }
 
-    private void Update()
-    {
+    private void Update() {
         foreach (var action in inputSet) action.Update();
     }
 }

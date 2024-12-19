@@ -40,24 +40,6 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
-                },
-                {
-                    "name": "MouseLeft",
-                    "type": "Button",
-                    "id": "a15b8dc0-bbb8-45a5-8db7-b62289e2ecb8",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "MouseRight",
-                    "type": "Button",
-                    "id": "24e58cd0-acf9-4a7f-b169-7d561e4afbeb",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -181,10 +163,74 @@
                     "action": "View",
                     "isComposite": false,
                     "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "Weapons",
+            "id": "69c5ccd6-b186-4212-8d09-c7be4884d13f",
+            "actions": [
+                {
+                    "name": "Slot1",
+                    "type": "Button",
+                    "id": "3940121e-0719-4042-a2e3-f878bcbe6d4e",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Slot2",
+                    "type": "Button",
+                    "id": "a70bdf70-cb78-4069-ab61-9bcfd6ac7708",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Slot3",
+                    "type": "Button",
+                    "id": "c2f6e3d6-baad-4ff6-bb9d-414d9591782f",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "MouseLeft",
+                    "type": "Button",
+                    "id": "5651ff10-a100-4ed6-bdbd-4f69a319ce0e",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "MouseRight",
+                    "type": "Button",
+                    "id": "3b73c191-aec4-4c29-a998-129224bf3b66",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "a681cefa-77dc-40ac-a517-a52545e18200",
+                    "path": "<Keyboard>/1",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Slot1",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 },
                 {
                     "name": "",
-                    "id": "03a971ea-cc91-4435-8e05-ef74e5fd60ad",
+                    "id": "fb1b48ee-b1e9-44e8-b267-3516bfed273c",
                     "path": "<Mouse>/leftButton",
                     "interactions": "",
                     "processors": "",
@@ -195,12 +241,34 @@
                 },
                 {
                     "name": "",
-                    "id": "4de8d1d3-e079-4c4a-8cb0-a9cf8b6a3b69",
+                    "id": "49214d08-b35c-4d99-a4b3-9c9ae2240512",
                     "path": "<Mouse>/rightButton",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
                     "action": "MouseRight",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c3a0e689-9b41-4ba5-b047-313483366c28",
+                    "path": "<Keyboard>/2",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Slot2",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "f45d8b5a-719a-404a-a292-8a6f3ec1f275",
+                    "path": "<Keyboard>/3",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Slot3",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

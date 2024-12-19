@@ -10,19 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9cf75a2f0ff3ee34aacd484970ac5587, type: 3}
-  m_Name: MouseLeft
+  m_Name: Mouse Right
   m_EditorClassIdentifier: 
   action:
-    m_Name: 
-    m_Type: 0
+    m_Name: MouseRight
+    m_Type: 1
     m_ExpectedControlType: 
-    m_Id: 88964391-4a80-4502-ad2d-6ee3b560960f
+    m_Id: 24e58cd0-acf9-4a7f-b169-7d561e4afbeb
     m_Processors: 
     m_Interactions: 
     m_SingletonActionBindings: []
     m_Flags: 0
   map: {fileID: 0}
-  bindName: MouseLeft
+  bindName: MouseRight
   locked: 0
   held: 0
   pressed: 0

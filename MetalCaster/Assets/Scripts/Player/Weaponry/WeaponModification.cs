@@ -13,4 +13,5 @@ public class WeaponModification : ScriptableObject
     public virtual void OnUpdate(Weapon context)                               { }
 
     public virtual void OnHit(Weapon context, RaycastHit hit, int bounceCount) { }
+    public virtual void OnMiss(Weapon context)                                 { }
 }

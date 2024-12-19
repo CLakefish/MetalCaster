@@ -210,12 +210,13 @@ public class PlayerController : Player.PlayerComponent
         {
             // Grounded transitions
             new(Grounded, Falling,   () => !GroundCollision),
-            new(Grounded, SlideJump, () => (PlayerInput.Jump || jumpBufferTime > 0) && PreviousState == Sliding),
-            new(Grounded, Jumping,   () => PlayerInput.Jump  || jumpBufferTime > 0),
+            new(Grounded, SlideJump, () => jumpBufferTime > 0 && PreviousState == Sliding),
+            new(Grounded, Jumping,   () => PlayerInput.Jump || jumpBufferTime > 0),
             new(Grounded, Sliding,   () => PlayerInput.Slide),
 
             // Jumping transitions   
             new(Jumping, Falling,    () => rb.linearVelocity.y <= 0 && hfsm.Duration >= minJumpTime),
+            new(Jumping, Grounded,   () => hfsm.Duration >= minJumpTime && GroundCollision),
             new(Jumping, WallRun,    () => WallCollision && AllowWallRun && hfsm.Duration >= minJumpTime),
 
             // Falling transitions   
@@ -411,14 +412,15 @@ public class PlayerController : Player.PlayerComponent
 
         public override void Enter() {
             if (context.PreviousState != context.Sliding && context.PreviousDuration > context.PlayerCamera.bobDelay) {
-                context.PlayerCamera.JumpBob(Mathf.Abs(context.prevFloorPosY - context.GroundPoint.y));
+                context.PlayerCamera.JumpBob();
             }
 
-            context.slideBoost = true;
-            stickVel           = Vector3.zero;
+            stickVel = Vector3.zero;
         }
 
         public override void Update() {
+            context.slideBoost = context.hfsm.Duration > context.groundMomentumConserveTime;
+
             context.PlayerCamera.ViewTilt();
         }
 
@@ -451,6 +453,8 @@ public class PlayerController : Player.PlayerComponent
             if (Input.GetKeyDown(KeyCode.Space)) {
                 context.jumpBufferTime = context.jumpBuffer;
             }
+
+            context.PlayerCamera.ViewTilt();
         }
 
         public override void FixedUpdate() => context.Move(context.moveSpeed, true);
@@ -465,6 +469,8 @@ public class PlayerController : Player.PlayerComponent
             context.jumpBufferTime = 0;
             context.rb.linearVelocity = new Vector3(context.rb.linearVelocity.x, context.jumpForce, context.rb.linearVelocity.z);
         }
+
+        public override void Update()      => context.PlayerCamera.ViewTilt();
 
         public override void FixedUpdate() => context.Move(context.moveSpeed, true);
     }
@@ -613,8 +619,7 @@ public class PlayerController : Player.PlayerComponent
         }
 
         public override void Update() {
-
-            if (context.PlayerInput.MousePosition == Vector2.zero && context.hfsm.Duration > context.wallRunRotateGraceTime) {
+            if (context.PlayerInput.AlteredMouseDelta == Vector2.zero && context.hfsm.Duration >= context.wallRunRotateGraceTime) {
                 float y = Mathf.SmoothDampAngle(context.rb.transform.localEulerAngles.y, targetY, ref rotateVel, context.PlayerCamera.wallRunRotationSpeed);
 
                 context.rb.MoveRotation(Quaternion.Euler(new Vector3(0, y, 0)));
