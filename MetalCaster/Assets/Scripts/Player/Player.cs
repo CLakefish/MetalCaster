@@ -4,9 +4,10 @@ public class Player : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private PlayerController playerMovement;
-    [SerializeField] private PlayerCamera playerCamera;
-    [SerializeField] private PlayerInput playerInput;
-    [SerializeField] private PlayerWeapon playerWeapon;
+    [SerializeField] private PlayerCamera     playerCamera;
+    [SerializeField] private PlayerInput      playerInput;
+    [SerializeField] private PlayerWeapon     playerWeapon;
+    [SerializeField] private PlayerHealth     playerHealth;
 
     public void Awake()
     {
@@ -20,7 +21,7 @@ public class Player : MonoBehaviour
     {
         private Player player;
 
-        public void SetPlayer(Player player) => this.player = player;
+        public void SetPlayer(Player player)    => this.player = player;
         public PlayerController GetController() { return player.playerMovement; }
         public PlayerCamera     GetCamera()     { return player.playerCamera; }
 
@@ -29,5 +30,6 @@ public class Player : MonoBehaviour
         protected PlayerInput      PlayerInput     => player.playerInput;
         protected PlayerCamera     PlayerCamera    => player.playerCamera;
         protected PlayerWeapon     PlayerWeapon    => player.playerWeapon;
+        protected PlayerHealth     PlayerHealth    => player.playerHealth;
     }
 }

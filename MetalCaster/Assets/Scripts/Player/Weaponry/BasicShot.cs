@@ -6,14 +6,12 @@ public class BasicShot : WeaponModification
     [SerializeField] private GameObject hitSpawn;
 
     public override void OnFire(Weapon context) {
-        context.playerWeapon.GetCamera().Screenshake(1, 1);
+        context.PlayerWeapon.GetCamera().Screenshake(1, 1);
     }
 
     public override void OnHit(Weapon context, RaycastHit hit, int bounceCount)
     {
-        GameObject plane    = Instantiate(hitSpawn, hit.point + (hit.normal / 10.0f), Quaternion.identity);
-
-        Vector3 start       = context.playerWeapon.GetCamera().CameraTransform.position;
+        Vector3 start       = context.PlayerWeapon.GetCamera().CameraTransform.position;
         Vector3 end         = hit.point;
         Vector3 toPlayer    = -(start - end).normalized;
         Quaternion rotation = Quaternion.LookRotation(Vector3.ProjectOnPlane(toPlayer, hit.normal), hit.normal);
@@ -22,6 +20,7 @@ public class BasicShot : WeaponModification
             rotation = Quaternion.Euler(-90, rotation.eulerAngles.y, rotation.eulerAngles.z);
         }
 
+        GameObject plane         = Instantiate(hitSpawn, hit.point + (hit.normal / 10.0f), Quaternion.identity);
         plane.transform.rotation = rotation;
 
         Vector3 reflected = Vector3.Reflect((hit.point - context.PrevHit).normalized, hit.normal);

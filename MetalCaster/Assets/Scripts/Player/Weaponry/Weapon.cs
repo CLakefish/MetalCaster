@@ -10,31 +10,34 @@ public class Weapon : MonoBehaviour
 
     [Header("Data")]
     [SerializeField] private PlayerWeaponData baseData;
-    public PlayerWeaponData weaponData;
 
-    private Coroutine reloadCoroutine;
-    private bool reloading = false;
+    public PlayerWeaponData WeaponData { get; set; }
+    public PlayerWeapon PlayerWeapon   { get; private set; }
+    public Vector3 PrevHit             { get; private set; }
 
-    public PlayerWeapon playerWeapon;
-    public Vector3 PrevHit { get; private set; }
+    private Coroutine reloadCoroutine = null;
+    private bool reloading            = false;
+
 
     public void OnEnable() => ReloadModifications();
 
-    public void Equip(PlayerWeapon context) {
-        playerWeapon = context;
+    public void Equip(PlayerWeapon context) 
+    {
+        PlayerWeapon = context;
         Debug.Log("Equipped");
     }
 
-    public void UnEquip() {
+    public void UnEquip() 
+    {
         Debug.Log("Unequipped");
     }
 
     public void ReloadModifications()
     {
-        weaponData = ScriptableObject.CreateInstance<PlayerWeaponData>();
-        weaponData.Set(baseData);
+        WeaponData = ScriptableObject.CreateInstance<PlayerWeaponData>();
+        WeaponData.Set(baseData);
 
-        weaponData.shotCount = weaponData.magazineSize;
+        WeaponData.shotCount = WeaponData.magazineSize;
 
         foreach (var mod in permanentModifications) mod.Modify(this);
         foreach (var mod in modifications)          mod.Modify(this);
@@ -42,27 +45,27 @@ public class Weapon : MonoBehaviour
 
     public void Fire(PlayerWeapon context)
     {
-        if (Time.time < weaponData.fireTime + weaponData.prevFireTime) return;
+        if (Time.time < WeaponData.fireTime + WeaponData.prevFireTime || WeaponData.shotCount <= 0) return;
 
         if (reloading)
         {
-            if (weaponData.shotCount <= 0) return;
+            if (WeaponData.shotCount <= 0) return;
             else StopReload();
         }
 
         PrevHit = context.GetCamera().CameraTransform.position;
-        weaponData.prevFireTime = Time.time;
+        WeaponData.prevFireTime = Time.time;
 
-        context.GetCamera().Recoil(weaponData.recoil);
+        context.GetCamera().Recoil(WeaponData.recoil);
         context.GetCamera().ViewmodelRecoil();
 
-        for (int i = 0; i < weaponData.bulletsPerShot; ++i)
+        for (int i = 0; i < WeaponData.bulletsPerShot; ++i)
         {
-            weaponData.shotCount--;
+            WeaponData.shotCount--;
 
-            if (weaponData.shotCount <= 0) break;
+            if (WeaponData.shotCount < 0) break;
 
-            FireImmediate(PrevHit, context.GetCamera().CameraForward, weaponData.bounceCount);
+            FireImmediate(PrevHit, context.GetCamera().CameraForward, WeaponData.bounceCount);
         }
     }
 
@@ -74,10 +77,12 @@ public class Weapon : MonoBehaviour
         foreach (var mod in permanentModifications) mod.OnFire(this);
         foreach (var mod in modifications)          mod.OnFire(this);
 
-        if (weaponData.type == PlayerWeaponData.ProjectileType.Raycast)
+        if (WeaponData.type == PlayerWeaponData.ProjectileType.Raycast)
         {
-            if (Physics.Raycast(pos, dir + (Random.insideUnitSphere * weaponData.shotDeviation), out RaycastHit hit, Mathf.Infinity, playerWeapon.CollisionLayers))
+            if (Physics.Raycast(pos, dir + (Random.insideUnitSphere * WeaponData.shotDeviation), out RaycastHit hit, Mathf.Infinity, PlayerWeapon.CollisionLayers))
             {
+                if (hit.collider.TryGetComponent<Health>(out Health hp)) hp.Damage(WeaponData.damage);
+
                 foreach (var mod in permanentModifications) mod.OnHit(this, hit, bounceCount);
                 foreach (var mod in modifications)          mod.OnHit(this, hit, bounceCount);
 
@@ -96,7 +101,7 @@ public class Weapon : MonoBehaviour
         foreach (var mod in permanentModifications) mod.OnUpdate(this);
         foreach (var mod in modifications)          mod.OnUpdate(this);
 
-        if (weaponData.shotCount <= 0) Reload();
+        if (WeaponData.shotCount <= 0) Reload();
     }
 
     private void Reload()
@@ -118,9 +123,9 @@ public class Weapon : MonoBehaviour
         foreach (var mod in permanentModifications) mod.OnReload(this);
         foreach (var mod in modifications)          mod.OnReload(this);
 
-        yield return new WaitForSeconds(weaponData.reloadTime);
+        yield return new WaitForSeconds(WeaponData.reloadTime);
 
-        weaponData.shotCount = weaponData.magazineSize;
+        WeaponData.shotCount = WeaponData.magazineSize;
 
         reloading = false;
     }

@@ -21,6 +21,6 @@ MonoBehaviour:
   type: 0
   fireTime: 0.2
   reloadTime: 0.5
-  recoil: {x: 1, y: 0.1, z: 0.1}
+  recoil: {x: 0.5, y: 0.1, z: 0.1}
   shotCount: 0
   prevFireTime: 0

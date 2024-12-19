@@ -6,13 +6,12 @@ using UnityEngine;
 // Concept recommendations and help by Oliver Beebe
 
 // TODO:
-// - Viewmodel Juice
-// - FOV Pulsing
-// - Weapon Swapping
-// - Weapon Modification testing
+// - Player HUD setup
+// - Pause Menu
+// - Modification Menu
 // - Weapon modification in game UI
-// - Saving/loading modifications
 // - Save system
+// - Saving/loading modifications
 // - UI
 
 public class PlayerController : Player.PlayerComponent
@@ -419,7 +418,7 @@ public class PlayerController : Player.PlayerComponent
         }
 
         public override void Update() {
-            context.slideBoost = context.hfsm.Duration > context.groundMomentumConserveTime;
+            if (!context.slideBoost) context.slideBoost = context.hfsm.Duration > context.groundMomentumConserveTime;
 
             context.PlayerCamera.ViewTilt();
         }

@@ -10,12 +10,12 @@ public class WeaponEnabler : MonoBehaviour
         if (!other.transform.parent.TryGetComponent<PlayerWeapon>(out PlayerWeapon p)) return;
 
         if (remove) {
-            p.RemoveWeapon(weapon);
+            Debug.Log("Removed: " + p.RemoveWeapon(weapon));
         }
         else {
             p.AddWeapon(weapon, true);
         }
 
-        Destroy(gameObject);
+        //Destroy(gameObject);
     }
 }

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   unlocked: 1
   damage: 1
-  magazineSize: 4
+  magazineSize: 5
   shotDeviation: 0.1
   bulletsPerShot: 1
   bounceCount: 0

@@ -34,15 +34,24 @@ public class PlayerWeapon : Player.PlayerComponent
     {
         if (PlayerInput.SlotPressed)
         {
-            if (PlayerInput.Slot.One.Pressed)   selectedIndex = 0;
-            if (PlayerInput.Slot.Two.Pressed)   selectedIndex = 1;
-            if (PlayerInput.Slot.Three.Pressed) selectedIndex = 2;
+            int desiredIndex = 0;
 
-            selectedIndex = Mathf.Clamp(selectedIndex, 0, weapons.Count - 1);
+            if (PlayerInput.Slot.One.Pressed)   desiredIndex = 0;
+            if (PlayerInput.Slot.Two.Pressed)   desiredIndex = 1;
+            if (PlayerInput.Slot.Three.Pressed) desiredIndex = 2;
 
-            SelectWeapon();
-            return;
+            desiredIndex = Mathf.Clamp(desiredIndex, 0, weapons.Count - 1);
+
+            if (desiredIndex != selectedIndex)
+            {
+                selectedIndex = desiredIndex;
+
+                SelectWeapon();
+                return;
+            }
         }
+
+        if (Selected.Weapon == null) return;
 
         if (PlayerInput.Mouse.Left.Held) {
             Selected.Weapon.Fire(this);
@@ -60,6 +69,8 @@ public class PlayerWeapon : Player.PlayerComponent
             Selected.Viewmodel = null;
             Selected.Weapon    = null;
         }
+
+        if (weapons.Count == 0) return;
 
         Selected.Viewmodel = Instantiate(weapons[selectedIndex].gameObject, viewmodelHolder, false);
         Selected.Weapon    = Selected.Viewmodel.GetComponent<Weapon>();
@@ -84,20 +95,21 @@ public class PlayerWeapon : Player.PlayerComponent
 
     public bool RemoveWeapon(Weapon weapon)
     {
-        if (weapons.Count <= 1) return false;
-
         int index = weapons.IndexOf(weapon);
-        if (index == -1) return false;
+        if (index < 0) return false;
+
+        weapons.Remove(weapon);
 
         if (index == selectedIndex)
         {
-            selectedIndex++;
-            selectedIndex %= weapons.Count;
+            if (weapons.Count != 0) {
+                selectedIndex++;
+                selectedIndex %= weapons.Count;
+            }
+            else selectedIndex = 0;
 
             SelectWeapon();
         }
-
-        weapons.Remove(weapon);
 
         return true;
     }
