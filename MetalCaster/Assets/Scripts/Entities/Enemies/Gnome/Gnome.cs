@@ -8,12 +8,21 @@ public class Gnome : MonoBehaviour
     [SerializeField] private NavMeshAgent nav;
     [SerializeField] private Health hp;
     [SerializeField] private float stunTime;
+    [SerializeField] private float delayStagger = 0.25f;
     [SerializeField] private Vector2 knockbackForce;
     [SerializeField] private float gravity;
     [SerializeField] private LayerMask groundLayer;
-    [SerializeField] private float attackTime;
+    [SerializeField] private LayerMask hittableLayer;
     [SerializeField] private ParticleSystem hitParticle;
     [SerializeField] private ParticleSystem deathParticle;
+
+    [Header("Attack")]
+    [SerializeField] private float attackTime;
+    [SerializeField] private float attackRate;
+    [SerializeField] private int attackDamage;
+    [SerializeField] private float attackRadius;
+    [SerializeField] private float attackDistance;
+
     private Transform desiredPos;
     private Rigidbody rb;
 
@@ -32,7 +41,7 @@ public class Gnome : MonoBehaviour
 
         hfsm.AddTransitions(new()
         {
-            new(Walking, Attacking, () => Vector3.Distance(transform.position, desiredPos.position) <= nav.stoppingDistance),
+            new(Walking, Attacking, () => Vector3.Distance(transform.position, desiredPos.position) <= nav.stoppingDistance && hfsm.Duration >= attackRate),
             new(Attacking, Walking, () => hfsm.Duration > attackTime),
             new(Launched, Walking,  () => hfsm.Duration >= stunTime && Physics.Raycast(transform.position, Vector3.down, nav.height / 2.0f + 0.1f, groundLayer)),
         });
@@ -42,6 +51,8 @@ public class Gnome : MonoBehaviour
         nav = GetComponent<NavMeshAgent>();
         rb  = GetComponent<Rigidbody>();
         hp  = GetComponent<Health>();
+
+        nav.updateRotation = false;
 
         hp.damaged += () =>
         {
@@ -72,13 +83,34 @@ public class Gnome : MonoBehaviour
         hfsm.FixedUpdate();
     }
 
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawRay(transform.position, transform.forward * attackDistance);
+        Gizmos.DrawWireSphere(transform.position + (transform.forward * attackDistance), attackRadius);
+    }
+
+    private void RotateTowardsPlayer()
+    {
+        Vector3 dir = (desiredPos.position - transform.position).normalized;
+        float deg = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
+        transform.rotation = Quaternion.Euler(0, deg, 0);
+    }
+
     private class GnomeWalk : State<Gnome>
     {
+        private float prevStagger;
         public GnomeWalk(Gnome context) : base(context) { }
 
-        public override void Update()
+        public override void FixedUpdate()
         {
-            context.nav.SetDestination(context.desiredPos.position);
+            context.RotateTowardsPlayer();
+
+            if (Time.time >= prevStagger + context.delayStagger)
+            {
+                prevStagger = Time.time;
+                context.nav.SetDestination(context.desiredPos.position);
+            }
         }
     }
 
@@ -106,6 +138,28 @@ public class Gnome : MonoBehaviour
 
     private class GnomeAttack : State<Gnome>
     {
+        private bool hasHit = false;
+
         public GnomeAttack(Gnome context) : base(context) { }
+
+        public override void Enter()
+        {
+            hasHit = false;
+
+            context.RotateTowardsPlayer();
+        }
+
+        public override void FixedUpdate()
+        {
+            if (hasHit) return;
+
+            if (!Physics.SphereCast(context.transform.position, context.attackRadius, context.transform.forward, out RaycastHit hit, context.attackDistance, context.hittableLayer)) return;
+
+            if (hit.collider.transform.parent.TryGetComponent(out Health hp))
+            {
+                hp.Damage(context.attackDamage);
+                hasHit = true;
+            }
+        }
     }
 }

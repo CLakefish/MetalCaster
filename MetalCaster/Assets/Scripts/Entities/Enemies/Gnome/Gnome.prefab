@@ -117,7 +117,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9005684468772500196}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0.0000000454099, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -99.80439, y: 18.432722, z: 106.32817}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -171,7 +171,7 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 0
-  m_IsKinematic: 0
+  m_IsKinematic: 1
   m_Interpolate: 0
   m_Constraints: 112
   m_CollisionDetection: 0
@@ -193,12 +193,12 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 1
-  m_Speed: 5
-  m_Acceleration: 12
+  m_Speed: 8
+  m_Acceleration: 150
   avoidancePriority: 50
-  m_AngularSpeed: 500
+  m_AngularSpeed: 2000
   m_StoppingDistance: 2.5
-  m_AutoTraverseOffMeshLink: 1
+  m_AutoTraverseOffMeshLink: 0
   m_AutoBraking: 1
   m_AutoRepath: 0
   m_Height: 4
@@ -234,11 +234,19 @@ MonoBehaviour:
   nav: {fileID: 0}
   hp: {fileID: 0}
   stunTime: 0.5
+  delayStagger: 0.75
   knockbackForce: {x: 20, y: 10}
   gravity: 46
   groundLayer:
     serializedVersion: 2
     m_Bits: 1
-  attackTime: 0
+  hittableLayer:
+    serializedVersion: 2
+    m_Bits: 512
   hitParticle: {fileID: 7551571236879097790, guid: 75cb9259dbd4ea343b2462bec1745e21, type: 3}
   deathParticle: {fileID: 1553835890667087703, guid: dd831deb9edbf0847bd8cc2a19afe04f, type: 3}
+  attackTime: 0.1
+  attackRate: 0.25
+  attackDamage: 2
+  attackRadius: 1.5
+  attackDistance: 2.5
