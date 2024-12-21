@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f93a6e2dcd9fad4da2aab0c8c5cca73, type: 3}
+  m_Name: New Line Rendering
+  m_EditorClassIdentifier: 
+  unlocked: 0
+  lineRenderer: {fileID: 2583496891296808985, guid: 5b5e2db404edca3408af9941fc4bfbea, type: 3}
+  time: 0.5

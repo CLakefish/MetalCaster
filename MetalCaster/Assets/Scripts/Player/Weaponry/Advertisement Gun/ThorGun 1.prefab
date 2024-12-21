@@ -195,7 +195,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   modifications: []
   permanentModifications:
-  - {fileID: 11400000, guid: 376a357f171b5334b80de31a404f6316, type: 2}
+  - {fileID: 11400000, guid: e7d384f0b84ed734dbd9f27c01fa2daf, type: 2}
+  - {fileID: 11400000, guid: 7a43ad14fc31b2d44a898e2d57f8052a, type: 2}
   baseData: {fileID: 11400000, guid: 493fd46d823d54c45b3197cb3c6923e8, type: 2}
-  weaponData: {fileID: 0}
-  context: {fileID: 0}

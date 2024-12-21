@@ -16,17 +16,22 @@ public class PlayerWeapon : Player.PlayerComponent
     private (Weapon Weapon, GameObject Viewmodel) Selected;
     private int selectedIndex = 0;
 
+    public System.Action Fire;
+    public System.Action ReloadStart;
+    public System.Action ReloadFinished;
+
+    public System.Action<Weapon> Swap;
+    public System.Action<Weapon> Added;
+    public System.Action<Weapon> Removed;
+
     public LayerMask CollisionLayers {
         get {
             return collisionLayers;
         }
     }
 
-    public GameObject Viewmodel {
-        get {
-            return Selected.Viewmodel;
-        }
-    }
+    public GameObject Viewmodel => Selected.Viewmodel;
+    public Weapon Weapon        => Selected.Weapon;
 
     private void OnEnable() => SelectWeapon();
 
@@ -57,6 +62,10 @@ public class PlayerWeapon : Player.PlayerComponent
             Selected.Weapon.Fire(this);
         }
 
+        if (PlayerInput.Mouse.Right.Held) {
+            Selected.Weapon.AltFire(this);
+        }
+
         Selected.Weapon.UpdateWeapon();
     }
 
@@ -64,18 +73,19 @@ public class PlayerWeapon : Player.PlayerComponent
     {
         if (Selected.Viewmodel != null) {
             Selected.Weapon.UnEquip();
-
-            Destroy(Selected.Viewmodel);
-            Selected.Viewmodel = null;
-            Selected.Weapon    = null;
+            Destroy(Selected.Viewmodel);  
         }
 
-        if (weapons.Count == 0) return;
+        if (weapons.Count == 0) {
+            return;
+        }
 
         Selected.Viewmodel = Instantiate(weapons[selectedIndex].gameObject, viewmodelHolder, false);
         Selected.Weapon    = Selected.Viewmodel.GetComponent<Weapon>();
 
         Selected.Weapon.Equip(this);
+
+        Swap?.Invoke(weapons[selectedIndex]);
     }
 
     public bool AddWeapon(Weapon weapon, bool equip = false)
@@ -90,6 +100,8 @@ public class PlayerWeapon : Player.PlayerComponent
             SelectWeapon();
         }
 
+        Added?.Invoke(weapon);
+
         return true;
     }
 
@@ -102,14 +114,26 @@ public class PlayerWeapon : Player.PlayerComponent
 
         if (index == selectedIndex)
         {
-            if (weapons.Count != 0) {
+            if (weapons.Count != 0)
+            {
                 selectedIndex++;
                 selectedIndex %= weapons.Count;
             }
-            else selectedIndex = 0;
+            else
+            {
+                selectedIndex = 0;
+            }
 
             SelectWeapon();
         }
+
+        if (weapons.Count == 0)
+        {
+            Selected.Weapon.UnEquip();
+            Destroy(Selected.Viewmodel);
+        }
+
+        Removed?.Invoke(weapon);
 
         return true;
     }

@@ -4,13 +4,21 @@ using UnityEngine;
 public class BasicShot : WeaponModification
 {
     [SerializeField] private GameObject hitSpawn;
+    [SerializeField] private int ricochetTotal;
+
+    public override void Modify(Weapon context) {
+        context.WeaponData.ricochetCount += ricochetTotal;
+    }
 
     public override void OnFire(Weapon context) {
         context.PlayerWeapon.GetCamera().Screenshake(1, 1);
     }
 
-    public override void OnHit(Weapon context, RaycastHit hit, int bounceCount)
+    public override void OnHit(Weapon context, RaycastHit hit, ref ShotPayload payload)
     {
+        if (payload.ricochetTotal <= 0 && context.WeaponData.ricochetCount != 0) return;
+        payload.ricochetTotal--;
+
         Vector3 start       = context.PlayerWeapon.GetCamera().CameraTransform.position;
         Vector3 end         = hit.point;
         Vector3 toPlayer    = -(start - end).normalized;
@@ -20,11 +28,10 @@ public class BasicShot : WeaponModification
             rotation = Quaternion.Euler(-90, rotation.eulerAngles.y, rotation.eulerAngles.z);
         }
 
-        GameObject plane         = Instantiate(hitSpawn, hit.point + (hit.normal / 10.0f), Quaternion.identity);
-        plane.transform.rotation = rotation;
+        Instantiate(hitSpawn, hit.point + (hit.normal / 10.0f), rotation);
 
-        Vector3 reflected = Vector3.Reflect((hit.point - context.PrevHit).normalized, hit.normal);
+        Vector3 reflected = Vector3.Reflect((hit.point - context.StartPos).normalized, hit.normal);
 
-        context.FireImmediate(hit.point, reflected, bounceCount);
+        context.FireImmediate(hit.point, reflected, ref payload);
     }
 }

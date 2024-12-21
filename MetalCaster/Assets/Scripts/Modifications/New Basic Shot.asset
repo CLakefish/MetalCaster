@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55f4166efbe0c7c45a736bf6bac9deed, type: 3}
+  m_Name: New Basic Shot
+  m_EditorClassIdentifier: 
+  unlocked: 0
+  hitSpawn: {fileID: 7149526667413304157, guid: fc9228bbce9d5314ebd2931793bb7482, type: 3}
+  ricochetTotal: 3

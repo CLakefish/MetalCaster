@@ -9,8 +9,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 55f4166efbe0c7c45a736bf6bac9deed, type: 3}
-  m_Name: New Basic Shot
+  m_Script: {fileID: 11500000, guid: 950812c2bdad08d439d70ee4f940e691, type: 3}
+  m_Name: New Chain Lightning
   m_EditorClassIdentifier: 
   unlocked: 0
-  hitSpawn: {fileID: 7149526667413304157, guid: fc9228bbce9d5314ebd2931793bb7482, type: 3}
+  radius: 10
+  hittable:
+    serializedVersion: 2
+    m_Bits: 1
+  lineRenderer: {fileID: 2583496891296808985, guid: 5b5e2db404edca3408af9941fc4bfbea, type: 3}
+  baseBounce: 3

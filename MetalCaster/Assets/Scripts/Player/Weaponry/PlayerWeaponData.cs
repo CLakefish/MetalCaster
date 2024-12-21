@@ -20,7 +20,6 @@ public class PlayerWeaponData : ScriptableObject
     [SerializeField] public int magazineSize;
     [SerializeField] public float shotDeviation;
     [SerializeField] public int bulletsPerShot = 1;
-    [SerializeField] public int bounceCount    = 0;
     [SerializeField] public ProjectileType type;
 
     [Header("Timings")]
@@ -32,6 +31,7 @@ public class PlayerWeaponData : ScriptableObject
 
     [Header("Debugging")]
     [HideInInspector] public int shotCount = 0;
+    [HideInInspector] public int ricochetCount = 0;
     [HideInInspector] public float prevFireTime = 0;
 
     public bool Unlocked => unlocked;
@@ -50,7 +50,7 @@ public class PlayerWeaponData : ScriptableObject
         this.type           = other.type;
         this.bulletsPerShot = other.bulletsPerShot;
         this.recoil         = other.recoil;
-        this.bounceCount    = other.bounceCount;
+        this.ricochetCount    = other.ricochetCount;
         this.shotDeviation  = other.shotDeviation;
     }
 }

@@ -8,6 +8,21 @@ public class Player : MonoBehaviour
     [SerializeField] private PlayerInput      playerInput;
     [SerializeField] private PlayerWeapon     playerWeapon;
     [SerializeField] private PlayerHealth     playerHealth;
+    [SerializeField] private PlayerHUD        playerHUD;
+
+    [Header("Physics")]
+    [SerializeField] public Rigidbody rb;
+
+    public static Player Instance;
+
+    public Camera GetCamera() {
+        return Instance.playerCamera.Camera;
+    }
+
+    private void OnEnable()
+    {
+        if (Instance == null) Instance = this;
+    }
 
     public void Awake()
     {
@@ -15,6 +30,7 @@ public class Player : MonoBehaviour
         playerCamera.SetPlayer(this);
         playerInput.SetPlayer(this);
         playerWeapon.SetPlayer(this);
+        playerHUD.SetPlayer(this);
     }
 
     public class PlayerComponent : MonoBehaviour
@@ -31,5 +47,6 @@ public class Player : MonoBehaviour
         protected PlayerCamera     PlayerCamera    => player.playerCamera;
         protected PlayerWeapon     PlayerWeapon    => player.playerWeapon;
         protected PlayerHealth     PlayerHealth    => player.playerHealth;
+        protected PlayerHUD        PlayerHUD       => player.playerHUD;
     }
 }

@@ -196,5 +196,6 @@ MonoBehaviour:
   modifications: []
   permanentModifications:
   - {fileID: 11400000, guid: c163a457b8917e544802b7da135a8ae1, type: 2}
+  - {fileID: 11400000, guid: 376a357f171b5334b80de31a404f6316, type: 2}
+  - {fileID: 11400000, guid: 7a43ad14fc31b2d44a898e2d57f8052a, type: 2}
   baseData: {fileID: 11400000, guid: 817d519c4a7620642a33bdc86781ff04, type: 2}
-  weaponData: {fileID: 0}

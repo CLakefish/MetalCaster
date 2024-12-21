@@ -6,7 +6,7 @@ using UnityEngine;
 // Concept recommendations and help by Oliver Beebe
 
 // TODO:
-// - Player HUD setup
+// - Better line visuals for guns (deviation preservation for misses)
 // - Pause Menu
 // - Modification Menu
 // - Weapon modification in game UI
@@ -65,6 +65,7 @@ public class PlayerController : Player.PlayerComponent
     [SerializeField] private float wallRunSpeed;
     [SerializeField] private float wallRunMaxAngle;
     [SerializeField] private float wallRunRotateGraceTime;
+    [SerializeField] private float wallRunAngleChangeMax;
     [SerializeField] private float wallRunGravity;
 
     [Header("Wall Jump Parameters")]
@@ -93,12 +94,12 @@ public class PlayerController : Player.PlayerComponent
     private StateMachine<PlayerController> hfsm;
 
     private GroundedState Grounded { get; set; }
-    private FallingState Falling { get; set; }
-    private JumpingState Jumping { get; set; }
-    private SlidingState Sliding { get; set; }
+    private FallingState Falling   { get; set; }
+    private JumpingState Jumping   { get; set; }
+    private SlidingState Sliding   { get; set; }
     private SlideJumping SlideJump { get; set; }
-    private WallRunning WallRun { get; set; }
-    private WallJumping WallJump { get; set; }
+    private WallRunning WallRun    { get; set; }
+    private WallJumping WallJump   { get; set; }
 
     private float Size {
         get { 
@@ -274,6 +275,11 @@ public class PlayerController : Player.PlayerComponent
         hfsm.Update();
 
         ChangeSize(PlayerInput.Slide || !CanUncrouch ? crouchSize : standardSize);
+
+        if (PlayerInput.Mouse.Right.Pressed)
+        {
+            PlayerHealth.Damage(10);
+        }
     }
 
     private void FixedUpdate()
@@ -309,7 +315,7 @@ public class PlayerController : Player.PlayerComponent
         Vector3 setVelocity = new (DesiredHorizontalVelocity.x, rb.linearVelocity.y, DesiredHorizontalVelocity.y);
 
         if (SlopeCollision && CurrentState == Grounded) {
-            setVelocity   = Quaternion.FromToRotation(Vector3.up, GroundNormal) * setVelocity;
+            setVelocity = Quaternion.FromToRotation(Vector3.up, GroundNormal) * setVelocity;
         }
 
         setVelocity.y = Mathf.Clamp(setVelocity.y, maxFallSpeed, Mathf.Infinity);
@@ -380,9 +386,9 @@ public class PlayerController : Player.PlayerComponent
     private void ResetWallCollisions()   => WallCollision  = false;
 
     public void Launch() {
+        hfsm.ChangeState(Falling);
         ResetGroundCollisions();
         ResetWallCollisions();
-        hfsm.ChangeState(Falling);
     }
 
     #endregion
@@ -640,18 +646,25 @@ public class PlayerController : Player.PlayerComponent
         public override void FixedUpdate() {
             Vector3 projected = GetProjected();
 
+            // Ensuring if you are not trying to stick to a wall with a large difference in the angle, it wont attempt to! Specifically for corners
+            // May cause a few things here and there, will need to stress test to confirm
+            if (Vector3.SignedAngle(projected, context.PlayerCamera.CameraForward, Vector3.up) <= context.wallRunAngleChangeMax) return;
+
+            // Ensuring it doesnt set your velocity to 0
             if (new Vector3(projected.x, 0, projected.z).magnitude == 0) return;
+
+            projected *= Mathf.Max(context.wallRunSpeed, context.rb.linearVelocity.magnitude);
 
             float downwardForce = context.rb.linearVelocity.y > 0 
                 ? context.rb.linearVelocity.y - (context.gravity * Time.fixedDeltaTime)
                 : context.rb.linearVelocity.y - (context.wallRunGravity * Time.fixedDeltaTime);
 
-            context.DesiredHorizontalVelocity = new Vector2(projected.x, projected.z);
+            context.DesiredHorizontalVelocity = new Vector2(projected.x, projected.z) + (new Vector2(context.WallNormal.x, context.WallNormal.z) * Time.fixedDeltaTime);
             context.rb.linearVelocity         = new Vector3(context.DesiredHorizontalVelocity.x, downwardForce, context.DesiredHorizontalVelocity.y);
         }
 
         Vector3 GetProjected() {
-            return Vector3.ProjectOnPlane(context.rb.linearVelocity, context.WallNormal).normalized * Mathf.Max(context.wallRunSpeed, context.rb.linearVelocity.magnitude);
+            return Vector3.ProjectOnPlane(context.rb.linearVelocity, context.WallNormal).normalized;
         }
 
         public override void Exit() => context.prevFloorPosY = context.rb.transform.position.y;

@@ -1,9 +1,24 @@
-using System.Collections.Generic;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+
+public class ShotPayload {
+    public int ricochetTotal;
+    public bool firstShot;
+    public HashSet<GameObject> hashSet;
+}
 
 public class Weapon : MonoBehaviour
 {
+    private class FireData
+    {
+        public Vector3 pos;
+        public Vector3 dir;
+        public ShotPayload payload;
+
+        public System.Func<Vector3, Vector3, ShotPayload, ShotPayload> action;
+    }
+
     [Header("Modifications (Debugging)")]
     [SerializeField] public List<WeaponModification> modifications;
     [SerializeField] public List<WeaponModification> permanentModifications;
@@ -13,23 +28,33 @@ public class Weapon : MonoBehaviour
 
     public PlayerWeaponData WeaponData { get; set; }
     public PlayerWeapon PlayerWeapon   { get; private set; }
-    public Vector3 PrevHit             { get; private set; }
+    public Vector3 StartPos            { get; private set; }
 
-    private Coroutine reloadCoroutine = null;
-    private bool reloading            = false;
 
+    private readonly Queue<FireData> bullets = new();
+    private Coroutine reloadCoroutine        = null;
+    private bool reloading                   = false;
 
     public void OnEnable() => ReloadModifications();
+
+    private void Update()
+    {
+        while (bullets.Count > 0)
+        {
+            var data = bullets.Dequeue();
+            data.payload = data.action.Invoke(data.pos, data.dir, data.payload);
+            data.payload.firstShot = false;
+        }
+    }
 
     public void Equip(PlayerWeapon context) 
     {
         PlayerWeapon = context;
-        Debug.Log("Equipped");
     }
 
-    public void UnEquip() 
-    {
-        Debug.Log("Unequipped");
+    public void UnEquip() {
+        bullets.Clear();
+        Destroy(gameObject);
     }
 
     public void ReloadModifications()
@@ -53,8 +78,8 @@ public class Weapon : MonoBehaviour
             else StopReload();
         }
 
-        PrevHit = context.GetCamera().CameraTransform.position;
         WeaponData.prevFireTime = Time.time;
+        StartPos                 = context.GetCamera().CameraTransform.position;
 
         context.GetCamera().Recoil(WeaponData.recoil);
         context.GetCamera().ViewmodelRecoil();
@@ -65,35 +90,69 @@ public class Weapon : MonoBehaviour
 
             if (WeaponData.shotCount < 0) break;
 
-            FireImmediate(PrevHit, context.GetCamera().CameraForward, WeaponData.bounceCount);
+            ShotPayload payload = new()
+            {
+                ricochetTotal = WeaponData.ricochetCount,
+                hashSet       = new(),
+                firstShot     = true
+            };
+
+            FireImmediate(context.GetCamera().CameraTransform.position, context.GetCamera().CameraForward, ref payload);
         }
+
+        PlayerWeapon.Fire?.Invoke();
     }
 
-    public void FireImmediate(Vector3 pos, Vector3 dir, int bounceCount)
+    public void AltFire(PlayerWeapon context)
     {
-        if (bounceCount < 0) return;
-        bounceCount--;
+        Vector3 pos = context.GetCamera().CameraTransform.position;
+        Vector3 dir = context.GetCamera().CameraForward;
 
-        foreach (var mod in permanentModifications) mod.OnFire(this);
-        foreach (var mod in modifications)          mod.OnFire(this);
+        StartPos = pos;
 
-        if (WeaponData.type == PlayerWeaponData.ProjectileType.Raycast)
+        foreach (var mod in permanentModifications) mod.AltFire(this, dir);
+        foreach (var mod in modifications)          mod.AltFire(this, dir);
+    }
+
+    public void FireImmediate(Vector3 position, Vector3 direction, ref ShotPayload payload)
+    {
+        FireData data = new()
         {
-            if (Physics.Raycast(pos, dir + (Random.insideUnitSphere * WeaponData.shotDeviation), out RaycastHit hit, Mathf.Infinity, PlayerWeapon.CollisionLayers))
+            pos     = position,
+            dir     = direction,
+            payload = payload,
+            action  = (Vector3 actPos, Vector3 actDir, ShotPayload actPayload) =>
             {
-                if (hit.collider.TryGetComponent<Health>(out Health hp)) hp.Damage(WeaponData.damage);
+                foreach (var mod in permanentModifications) mod.OnFire(this);
+                foreach (var mod in modifications)          mod.OnFire(this);
 
-                foreach (var mod in permanentModifications) mod.OnHit(this, hit, bounceCount);
-                foreach (var mod in modifications)          mod.OnHit(this, hit, bounceCount);
+                if (WeaponData.type == PlayerWeaponData.ProjectileType.Raycast)
+                {
+                    Vector3 deviatedDir = actDir + (Random.insideUnitSphere * WeaponData.shotDeviation);
 
-                PrevHit = hit.point;
+                    if (Physics.Raycast(actPos, deviatedDir, out RaycastHit hit, Mathf.Infinity, PlayerWeapon.CollisionLayers))
+                    {
+                        if (hit.collider.TryGetComponent(out Health hp) && !actPayload.hashSet.Contains(hit.collider.gameObject)) {
+                            hp.Damage(WeaponData.damage);
+                        }
+
+                        foreach (var mod in permanentModifications) mod.OnHit(this, hit, ref actPayload);
+                        foreach (var mod in modifications)          mod.OnHit(this, hit, ref actPayload);
+
+                        StartPos = hit.point;
+                    }
+                    else
+                    {
+                        foreach (var mod in permanentModifications) mod.OnMiss(this, deviatedDir, ref actPayload);
+                        foreach (var mod in modifications)          mod.OnMiss(this, deviatedDir, ref actPayload);
+                    }
+                }
+
+                return actPayload;
             }
-            else
-            {
-                foreach (var mod in permanentModifications) mod.OnMiss(this);
-                foreach (var mod in modifications)          mod.OnMiss(this);
-            }
-        }
+        };
+
+        bullets.Enqueue(data);
     }
 
     public void UpdateWeapon()
@@ -123,10 +182,13 @@ public class Weapon : MonoBehaviour
         foreach (var mod in permanentModifications) mod.OnReload(this);
         foreach (var mod in modifications)          mod.OnReload(this);
 
+        PlayerWeapon.ReloadStart?.Invoke();
+
         yield return new WaitForSeconds(WeaponData.reloadTime);
 
         WeaponData.shotCount = WeaponData.magazineSize;
 
         reloading = false;
+        PlayerWeapon.ReloadFinished?.Invoke();
     }
 }

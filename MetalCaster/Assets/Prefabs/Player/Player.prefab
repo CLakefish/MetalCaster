@@ -138,7 +138,7 @@ Rigidbody:
   m_IsKinematic: 0
   m_Interpolate: 1
   m_Constraints: 112
-  m_CollisionDetection: 2
+  m_CollisionDetection: 3
 --- !u!1 &4042502055790208785
 GameObject:
   m_ObjectHideFlags: 0
@@ -425,6 +425,7 @@ MonoBehaviour:
   playerInput: {fileID: 341725526681868616}
   playerWeapon: {fileID: 7555448633199992023}
   playerHealth: {fileID: 2769928743667661094}
+  playerHUD: {fileID: 0}
 --- !u!114 &341725526681868616
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -609,7 +610,7 @@ MonoBehaviour:
   layers:
     serializedVersion: 2
     m_Bits: 1
-  groundCastDist: 1.1
+  groundCastDist: 1
   fallingCastDist: 0.8
   wallCastIncrements: 8
   wallCastDistance: 0.6
@@ -638,6 +639,7 @@ MonoBehaviour:
   wallRunSpeed: 14
   wallRunMaxAngle: 75
   wallRunRotateGraceTime: 0.1
+  wallRunAngleChangeMax: -65
   wallRunGravity: 10
   wallJumpForce: 18
   wallJumpHeight: 15

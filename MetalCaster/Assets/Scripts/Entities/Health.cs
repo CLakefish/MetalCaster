@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[System.Serializable]
 public class Health : MonoBehaviour
 {
     [SerializeField] private int healthPoints;
@@ -8,23 +9,20 @@ public class Health : MonoBehaviour
     public int HealthPoints    => healthPoints;
     public int MaxHealthPoints => maxHealthPoints;
 
+    public System.Action damaged;
+    public System.Action killed;
+
     public void Damage(int total)
     {
+        damaged?.Invoke();
+
         if (healthPoints - total <= 0)
         {
             healthPoints = 0;
-            OnDeath();
+            killed?.Invoke();
             return;
         }
 
-        OnHit(total);
-    }
-
-    public virtual void OnHit(int total) { 
         healthPoints -= total;
-    }
-
-    public virtual void OnDeath() {
-        Destroy(gameObject);
     }
 }
