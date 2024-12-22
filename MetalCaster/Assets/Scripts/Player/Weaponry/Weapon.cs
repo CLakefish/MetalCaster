@@ -8,6 +8,7 @@ public class ShotPayload {
     public HashSet<GameObject> hashSet;
 }
 
+[System.Serializable]
 public class Weapon : MonoBehaviour
 {
     private class FireData
@@ -25,11 +26,13 @@ public class Weapon : MonoBehaviour
 
     [Header("Data")]
     [SerializeField] private PlayerWeaponData baseData;
+    [SerializeField] private string weaponName;
 
     public PlayerWeaponData WeaponData { get; set; }
     public PlayerWeapon PlayerWeapon   { get; private set; }
     public Vector3 StartPos            { get; private set; }
 
+    public string WeaponName => weaponName;
 
     private readonly Queue<FireData> bullets = new();
     private Coroutine reloadCoroutine        = null;
@@ -57,8 +60,26 @@ public class Weapon : MonoBehaviour
         Destroy(gameObject);
     }
 
-    public void ReloadModifications()
+    public void AddModification(WeaponModification data)
     {
+        if (modifications.Count >= WeaponData.modificationSlots) return;
+
+        modifications.Add(data);
+        ReloadModifications();
+    }
+
+    public void RemoveModification(WeaponModification data)
+    {
+        if (!modifications.Contains(data)) return;
+
+        modifications.Remove(data);
+        ReloadModifications();
+    }
+
+    private void ReloadModifications()
+    {
+        if (WeaponData != null) Destroy(WeaponData);
+
         WeaponData = ScriptableObject.CreateInstance<PlayerWeaponData>();
         WeaponData.Set(baseData);
 

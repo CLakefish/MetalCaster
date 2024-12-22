@@ -12,6 +12,7 @@ public class PlayerCamera : Player.PlayerComponent
     [SerializeField] private float fov = 90;
 
     [Header("Viewmodel Recoil")]
+    [SerializeField] private Camera viewmodelCamera;
     [SerializeField] private Transform viewmodelRecoilHolder;
     [SerializeField] private Vector3 viewmodelRecoil;
     [SerializeField] private float viewmodelKickbackSpeed;

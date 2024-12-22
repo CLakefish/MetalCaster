@@ -12,5 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d151bc2db694bd44f88da9589d9b5385, type: 3}
   m_Name: New Big Burst
   m_EditorClassIdentifier: 
-  unlocked: 1
+  modificationName: Big Burst
+  unlocked: 0
   reloadIncrease: 10

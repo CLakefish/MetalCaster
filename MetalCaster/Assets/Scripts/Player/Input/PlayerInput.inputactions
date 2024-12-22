@@ -40,6 +40,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "Reload",
+                    "type": "Button",
+                    "id": "a4b634c6-de72-4e11-97bd-aa8ce14da917",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -144,6 +153,17 @@
                 },
                 {
                     "name": "",
+                    "id": "45b79775-8f49-4d44-950b-c8d035bd8357",
+                    "path": "<Keyboard>/r",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Reload",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "723fab69-307c-4aff-a289-4d658df9cd89",
                     "path": "<Mouse>/delta",
                     "interactions": "",
@@ -214,15 +234,6 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
-                },
-                {
-                    "name": "Reload",
-                    "type": "Button",
-                    "id": "e81218d8-e674-481f-ad45-c347d1fe2313",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -278,17 +289,6 @@
                     "processors": "",
                     "groups": "",
                     "action": "Slot3",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "5bfbec08-bdb3-4d4b-8ca0-2fd6da3a24bb",
-                    "path": "<Keyboard>/r",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Reload",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

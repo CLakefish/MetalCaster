@@ -222,8 +222,8 @@ public class PlayerController : Player.PlayerComponent
             // Falling transitions   
             new(Falling, Jumping,    () => PlayerInput.Jump && PreviousState == Grounded && hfsm.Duration < coyoteTime),
             new(Falling, SlideJump,  () => PlayerInput.Jump && PreviousState == Sliding && hfsm.Duration < coyoteTime),
-            new(Falling, WallJump,   () => PlayerInput.Jump && WallCollision && !GroundCollision),
-            new(Falling, WallJump,   () => PlayerInput.Jump && PreviousState == WallRun && hfsm.Duration < wallJumpCoyoteTime),
+            new(Falling, WallJump,   () => (PlayerInput.Jump || jumpBufferTime > 0) && WallCollision && !GroundCollision),
+            new(Falling, WallJump,   () => (PlayerInput.Jump || jumpBufferTime > 0) && PreviousState == WallRun && hfsm.Duration < wallJumpCoyoteTime),
 
             new(Falling, Grounded,   () => !PlayerInput.Slide && GroundCollision),
             new(Falling, Sliding,    () => PlayerInput.Slide  && GroundCollision),
@@ -264,6 +264,16 @@ public class PlayerController : Player.PlayerComponent
             () => previousDuration = hfsm.Duration,
         });
 
+        hfsm.Start(Falling);
+    }
+
+    private void OnDisable()
+    {
+        rb.linearVelocity         = Vector3.zero;
+        DesiredHorizontalVelocity = Vector2.zero;
+
+        ResetGroundCollisions();
+        ResetWallCollisions();
         hfsm.Start(Falling);
     }
 

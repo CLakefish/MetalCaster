@@ -137,7 +137,7 @@ MeshRenderer:
   m_GameObject: {fileID: 3421615328983944174}
   m_Enabled: 1
   m_CastShadows: 1
-  m_ReceiveShadows: 1
+  m_ReceiveShadows: 0
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
@@ -195,6 +195,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   modifications: []
   permanentModifications:
-  - {fileID: 11400000, guid: e7d384f0b84ed734dbd9f27c01fa2daf, type: 2}
   - {fileID: 11400000, guid: 7a43ad14fc31b2d44a898e2d57f8052a, type: 2}
   baseData: {fileID: 11400000, guid: 493fd46d823d54c45b3197cb3c6923e8, type: 2}
+  weaponName: 2

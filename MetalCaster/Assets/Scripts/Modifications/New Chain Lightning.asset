@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 950812c2bdad08d439d70ee4f940e691, type: 3}
   m_Name: New Chain Lightning
   m_EditorClassIdentifier: 
+  modificationName: Chain Lightning
   unlocked: 0
   radius: 10
   hittable:

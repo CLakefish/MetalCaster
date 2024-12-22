@@ -16,8 +16,6 @@ public class LineRendering : WeaponModification
 
     public override void OnHit(Weapon context, RaycastHit hit, ref ShotPayload payload)
     {
-        Debug.Log(payload.firstShot);
-
         if (payload.firstShot)
         {
             InstantiateLine(context.PlayerWeapon.Viewmodel.transform.position, hit.point);

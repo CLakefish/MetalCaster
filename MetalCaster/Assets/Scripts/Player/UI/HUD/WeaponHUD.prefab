@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3071352120340507112}
   - component: {fileID: 9191793352170819872}
   m_Layer: 2
-  m_Name: RawImage
+  m_Name: WeaponHUD
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

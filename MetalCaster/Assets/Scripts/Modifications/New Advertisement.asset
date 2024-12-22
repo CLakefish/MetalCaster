@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 75ee2cc295c3d4a4690050cdae9098bb, type: 3}
   m_Name: New Advertisement
   m_EditorClassIdentifier: 
+  modificationName: Material Swap
   unlocked: 0
   advertisementMaterial: {fileID: 2100000, guid: d10f601b025cc184c9a1a17959d370a4, type: 2}
-  lineRenderer: {fileID: 2583496891296808985, guid: 5b5e2db404edca3408af9941fc4bfbea, type: 3}

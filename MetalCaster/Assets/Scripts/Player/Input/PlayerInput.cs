@@ -17,9 +17,12 @@ public class PlayerInput : Player.PlayerComponent
     [Header("Weaponry")]
     [SerializeField] private BoolInput left;
     [SerializeField] private BoolInput right;
+    // Should make this a list :)
     [SerializeField] private BoolInput slot1;
     [SerializeField] private BoolInput slot2;
     [SerializeField] private BoolInput slot3;
+
+    [SerializeField] private BoolInput reload;
 
     [Header("Variables")]
     [SerializeField] private Vector2 sensitivity;
@@ -69,6 +72,12 @@ public class PlayerInput : Player.PlayerComponent
         }
     }
 
+    public bool Reload {
+        get {
+            return reload.Pressed;
+        }
+    }
+
     public (BoolInput Left, BoolInput Right) Mouse {
         get {
             return (left, right);
@@ -89,7 +98,7 @@ public class PlayerInput : Player.PlayerComponent
 
     private void OnEnable()
     {
-        inputSet = new() { jump, moveInput, slide, viewInput, left, right, slot1, slot2, slot3 };
+        inputSet = new() { jump, moveInput, slide, viewInput, left, right, slot1, slot2, slot3, reload };
 
         foreach (var action in inputSet) {
             action.action.Enable();

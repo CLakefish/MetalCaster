@@ -17,10 +17,11 @@ MonoBehaviour:
   magazineSize: 12
   shotDeviation: 0.1
   bulletsPerShot: 2
-  bounceCount: 3
   type: 0
+  modificationSlots: 2
   fireTime: 0.2
   reloadTime: 0.5
   recoil: {x: 0.5, y: 0.1, z: 0.1}
   shotCount: 0
+  ricochetCount: 0
   prevFireTime: 0

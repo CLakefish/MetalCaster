@@ -22,6 +22,9 @@ public class PlayerWeaponData : ScriptableObject
     [SerializeField] public int bulletsPerShot = 1;
     [SerializeField] public ProjectileType type;
 
+    [Header("Modifications")]
+    [SerializeField] public int modificationSlots;
+
     [Header("Timings")]
     [SerializeField] public float fireTime;
     [SerializeField] public float reloadTime;
@@ -42,15 +45,16 @@ public class PlayerWeaponData : ScriptableObject
 
         // Could use reflection, although this is faster. If you really wanted to, use typeof().GetFields() and iterate :)
 
-        this.damage         = other.damage;
-        this.magazineSize   = other.magazineSize;
-        this.shotCount      = other.shotCount;
-        this.fireTime       = other.fireTime;
-        this.reloadTime     = other.reloadTime;
-        this.type           = other.type;
-        this.bulletsPerShot = other.bulletsPerShot;
-        this.recoil         = other.recoil;
-        this.ricochetCount    = other.ricochetCount;
-        this.shotDeviation  = other.shotDeviation;
+        this.damage            = other.damage;
+        this.magazineSize      = other.magazineSize;
+        this.shotCount         = other.shotCount;
+        this.fireTime          = other.fireTime;
+        this.reloadTime        = other.reloadTime;
+        this.type              = other.type;
+        this.bulletsPerShot    = other.bulletsPerShot;
+        this.recoil            = other.recoil;
+        this.ricochetCount     = other.ricochetCount;
+        this.shotDeviation     = other.shotDeviation;
+        this.modificationSlots = other.modificationSlots;
     }
 }

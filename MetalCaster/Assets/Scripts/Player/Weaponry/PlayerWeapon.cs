@@ -16,6 +16,8 @@ public class PlayerWeapon : Player.PlayerComponent
     private (Weapon Weapon, GameObject Viewmodel) Selected;
     private int selectedIndex = 0;
 
+    public bool MenuOpen;
+
     public System.Action Fire;
     public System.Action ReloadStart;
     public System.Action ReloadFinished;
@@ -35,8 +37,17 @@ public class PlayerWeapon : Player.PlayerComponent
 
     private void OnEnable() => SelectWeapon();
 
+    private void Start()
+    {
+        weapons = GameDataManager.Instance.ActiveSave.GetWeapons();
+        foreach (var weapon in weapons) Added?.Invoke(weapon);
+        SelectWeapon();
+    }
+
     private void Update()
     {
+        if (MenuOpen) return;
+
         if (PlayerInput.SlotPressed)
         {
             int desiredIndex = 0;
@@ -69,6 +80,8 @@ public class PlayerWeapon : Player.PlayerComponent
         Selected.Weapon.UpdateWeapon();
     }
 
+    #region Weapons
+
     private void SelectWeapon()
     {
         if (Selected.Viewmodel != null) {
@@ -79,6 +92,8 @@ public class PlayerWeapon : Player.PlayerComponent
         if (weapons.Count == 0) {
             return;
         }
+
+        weapons = GameDataManager.Instance.ActiveSave.GetWeapons();
 
         Selected.Viewmodel = Instantiate(weapons[selectedIndex].gameObject, viewmodelHolder, false);
         Selected.Weapon    = Selected.Viewmodel.GetComponent<Weapon>();
@@ -101,6 +116,8 @@ public class PlayerWeapon : Player.PlayerComponent
         }
 
         Added?.Invoke(weapon);
+
+        GameDataManager.Instance.ActiveSave.SaveWeapon(weapon);
 
         return true;
     }
@@ -133,8 +150,14 @@ public class PlayerWeapon : Player.PlayerComponent
             Destroy(Selected.Viewmodel);
         }
 
+        weapon.modifications.Clear();
+
         Removed?.Invoke(weapon);
+
+        GameDataManager.Instance.ActiveSave.RemoveWeapon(weapon);
 
         return true;
     }
+
+    #endregion
 }

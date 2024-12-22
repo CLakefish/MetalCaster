@@ -8,7 +8,7 @@ public class Gnome : MonoBehaviour
     [SerializeField] private NavMeshAgent nav;
     [SerializeField] private Health hp;
     [SerializeField] private float stunTime;
-    [SerializeField] private float delayStagger = 0.25f;
+    [SerializeField] private float pingDelay = 0.25f;
     [SerializeField] private Vector2 knockbackForce;
     [SerializeField] private float gravity;
     [SerializeField] private LayerMask groundLayer;
@@ -41,7 +41,7 @@ public class Gnome : MonoBehaviour
 
         hfsm.AddTransitions(new()
         {
-            new(Walking, Attacking, () => Vector3.Distance(transform.position, desiredPos.position) <= nav.stoppingDistance && hfsm.Duration >= attackRate),
+            new(Walking, Attacking, () => Vector3.Distance(transform.position, desiredPos.position) <= attackDistance && hfsm.Duration >= attackRate),
             new(Attacking, Walking, () => hfsm.Duration > attackTime),
             new(Launched, Walking,  () => hfsm.Duration >= stunTime && Physics.Raycast(transform.position, Vector3.down, nav.height / 2.0f + 0.1f, groundLayer)),
         });
@@ -76,6 +76,8 @@ public class Gnome : MonoBehaviour
     {
         hfsm.CheckTransitions();
         hfsm.Update();
+
+        Debug.Log(hfsm.CurrentState);
     }
 
     private void FixedUpdate()
@@ -106,7 +108,7 @@ public class Gnome : MonoBehaviour
         {
             context.RotateTowardsPlayer();
 
-            if (Time.time >= prevStagger + context.delayStagger)
+            if (Time.time >= prevStagger + context.pingDelay)
             {
                 prevStagger = Time.time;
                 context.nav.SetDestination(context.desiredPos.position);
@@ -120,7 +122,8 @@ public class Gnome : MonoBehaviour
 
         public override void Enter()
         {
-            context.nav.enabled = false;
+            context.nav.enabled       = false;
+            context.rb.isKinematic    = false;
             context.rb.linearVelocity = (context.rb.transform.position - context.desiredPos.position).normalized * context.knockbackForce.x + (Vector3.up * context.knockbackForce.y);
         }
 
@@ -132,7 +135,8 @@ public class Gnome : MonoBehaviour
         public override void Exit()
         {
             context.rb.linearVelocity = Vector3.zero;
-            context.nav.enabled = true;
+            context.rb.isKinematic    = true;
+            context.nav.enabled       = true;
         }
     }
 
@@ -153,10 +157,13 @@ public class Gnome : MonoBehaviour
         {
             if (hasHit) return;
 
-            if (!Physics.SphereCast(context.transform.position, context.attackRadius, context.transform.forward, out RaycastHit hit, context.attackDistance, context.hittableLayer)) return;
+            if (!Physics.Raycast(context.transform.position, (context.desiredPos.position - context.rb.transform.position).normalized, out RaycastHit hit, context.attackDistance, context.hittableLayer)) return;
+
+            Debug.Log("hit something");
 
             if (hit.collider.transform.parent.TryGetComponent(out Health hp))
             {
+                Debug.Log("Damaged something");
                 hp.Damage(context.attackDamage);
                 hasHit = true;
             }

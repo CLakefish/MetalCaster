@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f93a6e2dcd9fad4da2aab0c8c5cca73, type: 3}
   m_Name: New Line Rendering
   m_EditorClassIdentifier: 
+  modificationName: Line Rendering
   unlocked: 0
   lineRenderer: {fileID: 2583496891296808985, guid: 5b5e2db404edca3408af9941fc4bfbea, type: 3}
   time: 0.5

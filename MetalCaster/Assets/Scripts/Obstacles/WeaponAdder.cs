@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class WeaponEnabler : MonoBehaviour
+public class WeaponAdder : MonoBehaviour
 {
     [SerializeField] private Weapon weapon;
     [SerializeField] private bool remove;
