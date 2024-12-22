@@ -66,6 +66,7 @@ public class SaveData : ScriptableObject
             if (entry.weaponName == desiredWeapon.WeaponName)
             {
                 entry.modificationNames          = desiredWeapon.modifications.ConvertAll(mod => mod.ModificationName);
+                entry.permanentModificationNames = desiredWeapon.permanentModifications.ConvertAll(mod => mod.ModificationName);
 
                 SaveAltered?.Invoke();
                 return;
@@ -90,15 +91,14 @@ public class SaveData : ScriptableObject
 
         foreach (var entry in Weapons)
         {
-            var temp = ContentManager.Instance.GetWeaponDataByName(entry.weaponName);
+            var data = ContentManager.Instance.GetWeaponDataByName(entry.weaponName);
 
-            if (temp == null)
+            if (data == null)
             {
                 Debug.LogError("Weapon with ID: " + entry.weaponName + " not found!");
                 continue;
             }
 
-            Weapon data = Instantiate(temp);
             data.modifications.Clear();
             data.permanentModifications.Clear();
 
@@ -116,5 +116,21 @@ public class SaveData : ScriptableObject
         }
 
         return weapons;
+    }
+
+    public void ResetWeapons()
+    {
+        foreach (var entry in Weapons)
+        {
+            var data = ContentManager.Instance.GetWeaponDataByName(entry.weaponName);
+
+            if (data == null)
+            {
+                Debug.LogError("Weapon with ID: " + entry.weaponName + " not found!");
+                continue;
+            }
+
+            data.modifications.Clear();
+        }
     }
 }

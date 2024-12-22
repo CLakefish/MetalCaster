@@ -39,9 +39,12 @@ public class GameDataManager : MonoBehaviour
         }
     }
 
-    private void OnEnable() 
-    {
+    private void OnEnable() {
         ActiveSave.SaveAltered += Write;
+    }
+
+    private void OnApplicationQuit() {
+        ActiveSave.ResetWeapons();
     }
 
     private void Awake() 
