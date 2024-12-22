@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using System.Collections;
+using UnityEngine.UI;
 
 public class Menu : Player.PlayerComponent
 {
@@ -25,6 +27,10 @@ public class ModificationMenu : Menu
     [SerializeField] private GameObject modificationItem;
     [SerializeField] private GameObject modificationSelectPrefab;
     [SerializeField] private GameObject modificationSlotPrefab;
+    [SerializeField] private Popup popup;
+
+    [Header("Interpolation")]
+    [SerializeField] private float timeChangeSpeed;
 
     private readonly List<WeaponModification> equippedMods   = new();
     private readonly List<WeaponModification> unequippedMods = new();
@@ -32,8 +38,13 @@ public class ModificationMenu : Menu
     private readonly List<GameObject> slots       = new();
     private readonly List<GameObject> selectables = new();
 
+    private Coroutine timeSlow;
+
     private void Open()
     {
+        if (timeSlow != null) StopCoroutine(timeSlow);
+        timeSlow = StartCoroutine(TimeSlow(0));
+
         canvas.enabled = true;
 
         isActive = true;
@@ -45,14 +56,17 @@ public class ModificationMenu : Menu
         PlayerMovement.enabled = false;
         PlayerHUD.gameObject.SetActive(false);
 
-        ClearAll();
-
         DisplayWeaponSlots();
     }
 
     private void Close()
     {
         ClearAll();
+
+        TooltipManager.Instance.HidePopup();
+
+        if (timeSlow != null) StopCoroutine(timeSlow);
+        timeSlow = StartCoroutine(TimeSlow(1));
 
         canvas.enabled = false;
 
@@ -68,25 +82,19 @@ public class ModificationMenu : Menu
 
     private void DisplayWeaponSlots()
     {
+        ClearAll();
+
         Weapon weapon = PlayerWeapon.Weapon;
 
         equippedMods.AddRange(weapon.modifications);
         unequippedMods.AddRange(modifications.Except(equippedMods));
-
-        Debug.Log("Equipped: " + equippedMods.Count + "\nBase: " + weapon.modifications.Count);
 
         for (int i = 0; i < equippedMods.Count; i++)
         {
             GameObject temp = Instantiate(modificationSelectPrefab, selectedHolder);
             temp.GetComponent<ModificationSlot>().Initialize(this);
 
-            GameObject item                 = Instantiate(modificationItem, temp.transform);
-            ModificationDraggable draggable = item.GetComponent<ModificationDraggable>();
-            draggable.SetModification(equippedMods[i]);
-
-            draggable.onDrop += () => {
-                GameDataManager.Instance.ActiveSave.SaveWeapon(weapon);
-            };
+            CreateModificationDraggable(temp.transform, equippedMods[i], weapon);
 
             selectables.Add(temp);
         }
@@ -104,18 +112,29 @@ public class ModificationMenu : Menu
         {
             GameObject temp = Instantiate(modificationSlotPrefab, slotHolder);
 
-            if (!equippedMods.Contains(mods[i]))  {
-                GameObject item                 = Instantiate(modificationItem, temp.transform);
-                ModificationDraggable draggable = item.GetComponent<ModificationDraggable>();
-                draggable.SetModification(mods[i]);
-
-                draggable.onDrop += () => {
-                    GameDataManager.Instance.ActiveSave.SaveWeapon(weapon);
-                };
+            if (!equippedMods.Contains(mods[i])) {
+                CreateModificationDraggable(temp.transform, mods[i], weapon);
             }
 
             selectables.Add(temp);
         }
+    }
+
+    private GameObject CreateModificationDraggable(Transform parent, WeaponModification mod, Weapon weapon)
+    {
+        GameObject item = Instantiate(modificationItem, parent);
+        var draggable   = item.GetComponent<ModificationDraggable>();
+
+        draggable.SetReferences(mod);
+        draggable.OnDragParent(canvas.transform);
+
+        draggable.GetComponent<Image>().sprite = mod.ModificationSprite;
+
+        draggable.onDrop += () => {
+            GameDataManager.Instance.ActiveSave.SaveWeapon(weapon);
+        };
+
+        return item;
     }
 
     private void ClearAll()
@@ -125,7 +144,7 @@ public class ModificationMenu : Menu
 
         if (slots.Count > 0 || selectables.Count > 0)
         {
-            foreach (var slot in slots)         Destroy(slot);
+            foreach (var slot in slots) Destroy(slot);
             foreach (var select in selectables) Destroy(select);
 
             slots.Clear();
@@ -133,7 +152,20 @@ public class ModificationMenu : Menu
         }
     }
 
-    void Update()
+    private IEnumerator TimeSlow(float end)
+    {
+        float velocity = 0;
+
+        while (Mathf.Abs(Time.timeScale - end) > Mathf.Epsilon)
+        {
+            Time.timeScale = Mathf.SmoothDamp(Time.timeScale, end, ref velocity, timeChangeSpeed, Mathf.Infinity, Time.unscaledDeltaTime);
+            yield return null;
+        }
+
+        Time.timeScale = end;
+    }
+
+    private void Update()
     {
         if (PlayerInput.Reload && PlayerWeapon.Weapon != null)
         {

@@ -13,5 +13,6 @@ MonoBehaviour:
   m_Name: New Big Burst
   m_EditorClassIdentifier: 
   modificationName: Big Burst
-  unlocked: 0
-  reloadIncrease: 10
+  description: Fire every bullet at once
+  modificationSprite: {fileID: 21300000, guid: 80218d083098bf046b45190634310722, type: 3}
+  reloadIncrease: 4

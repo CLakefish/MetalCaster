@@ -12,12 +12,9 @@ public class PlayerWeapon : Player.PlayerComponent
 
     [Header("Collisions")]
     [SerializeField] private LayerMask collisionLayers;
-    private Dictionary<string, int> bulletMap = new();
 
     private (Weapon Weapon, GameObject Viewmodel) Selected;
-    private int selectedIndex = 0;
-
-    public bool MenuOpen;
+    public bool MenuOpen { get; set; }
 
     public System.Action Fire;
     public System.Action ReloadStart;
@@ -26,6 +23,9 @@ public class PlayerWeapon : Player.PlayerComponent
     public System.Action<Weapon> Swap;
     public System.Action<Weapon> Added;
     public System.Action<Weapon> Removed;
+
+    private readonly Dictionary<string, int> bulletMap = new();
+    private int selectedIndex = 0;
 
     public LayerMask CollisionLayers {
         get {

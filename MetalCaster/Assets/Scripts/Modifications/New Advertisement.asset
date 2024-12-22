@@ -13,5 +13,6 @@ MonoBehaviour:
   m_Name: New Advertisement
   m_EditorClassIdentifier: 
   modificationName: Material Swap
-  unlocked: 0
+  description: Whatever you hit is stuck to be this material
+  modificationSprite: {fileID: 21300000, guid: 58fac26cd11db6f4ab59df9548a3404e, type: 3}
   advertisementMaterial: {fileID: 2100000, guid: d10f601b025cc184c9a1a17959d370a4, type: 2}

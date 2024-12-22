@@ -3,9 +3,12 @@ using UnityEngine;
 public class WeaponModification : ScriptableObject
 {
     [SerializeField] private string modificationName;
-    [SerializeField] private bool unlocked;
-    public bool   Unlocked         => unlocked;
-    public string ModificationName => modificationName;
+    [TextArea, SerializeField] private string description;
+    [SerializeField] private Sprite modificationSprite;
+
+    public string ModificationName   => modificationName;
+    public string Description        => description;
+    public Sprite ModificationSprite => modificationSprite;
 
     public virtual void Modify(Weapon context)                                         { }
                                                                                        

@@ -8,7 +8,10 @@ public class Slot : MonoBehaviour, IDropHandler
         if (transform.childCount > 0) return;
 
         GameObject dropped = data.pointerDrag;
-        Draggable item     = dropped.GetComponent<Draggable>();
+
+        if (dropped == null) return;
+        if (!dropped.TryGetComponent<Draggable>(out Draggable item)) return;
+
         item.SetEndParent(transform);
     }
 }

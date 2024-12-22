@@ -12,8 +12,10 @@ public class WeaponSaveData
 [CreateAssetMenu(menuName = "Data/Save Data")]
 public class SaveData : ScriptableObject
 {
+    [Header("Data")]
     [SerializeField] private string saveName;
     [SerializeField] private float  saveTime;
+    [Header("Unlocks")]
     [SerializeField] private List<WeaponModification> modifications = new();
     [SerializeField] private List<WeaponSaveData> weapons = new();
 

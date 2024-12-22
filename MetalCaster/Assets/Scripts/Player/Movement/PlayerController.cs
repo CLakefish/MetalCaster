@@ -269,9 +269,6 @@ public class PlayerController : Player.PlayerComponent
 
     private void OnDisable()
     {
-        rb.linearVelocity         = Vector3.zero;
-        DesiredHorizontalVelocity = Vector2.zero;
-
         ResetGroundCollisions();
         ResetWallCollisions();
         hfsm.Start(Falling);

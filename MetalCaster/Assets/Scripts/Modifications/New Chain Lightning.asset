@@ -13,10 +13,12 @@ MonoBehaviour:
   m_Name: New Chain Lightning
   m_EditorClassIdentifier: 
   modificationName: Chain Lightning
-  unlocked: 0
+  description: On hitting an enemy a surge of electricity spawns, hitting up to 3
+    enemies around the hit enemy.
+  modificationSprite: {fileID: -1680063720633091170, guid: bc7faa27e9210c941a2be9c25b2fc707, type: 3}
   radius: 10
   hittable:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 257
   lineRenderer: {fileID: 2583496891296808985, guid: 5b5e2db404edca3408af9941fc4bfbea, type: 3}
   baseBounce: 3

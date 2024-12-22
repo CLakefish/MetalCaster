@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: New Basic Shot
   m_EditorClassIdentifier: 
   modificationName: Ricochet
-  unlocked: 0
+  description: Every bullet fired will ricochet
+  modificationSprite: {fileID: 21300000, guid: a28468a4e1b124b4d9a4d0abdd8d12ca, type: 3}
   hitSpawn: {fileID: 7149526667413304157, guid: fc9228bbce9d5314ebd2931793bb7482, type: 3}
-  ricochetTotal: 3
+  ricochetTotal: 1
