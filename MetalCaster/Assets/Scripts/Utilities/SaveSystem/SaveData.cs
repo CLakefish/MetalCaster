@@ -118,6 +118,51 @@ public class SaveData : ScriptableObject
         return weapons;
     }
 
+    public Weapon UpdateWeapon(Weapon weapon)
+    {
+        WeaponSaveData temp = null;
+
+        foreach (var entry in Weapons)
+        {
+            if (entry.weaponName == weapon.WeaponName)
+            {
+                temp = entry;
+                break;
+            }
+        }
+
+        if (temp == null)
+        {
+            Debug.LogError("Weapon not found in save! File: " + weapon.WeaponName);
+            return null;
+        }
+
+        Weapon data = ContentManager.Instance.GetWeaponDataByName(temp.weaponName);
+
+        if (data == null)
+        {
+            Debug.LogError("Weapon with ID: " + weapon.WeaponName + " not found!");
+            return null;
+        }
+
+        data.modifications.Clear();
+        data.permanentModifications.Clear();
+
+        foreach (string mod in temp.modificationNames)
+        {
+            var modRef = ContentManager.Instance.GetModificationByName(mod);
+            data.modifications.Add(modRef);
+        }
+
+        foreach (var mod in temp.permanentModificationNames)
+        {
+            var modRef = ContentManager.Instance.GetModificationByName(mod);
+            data.permanentModifications.Add(modRef);
+        }
+
+        return data;
+    }
+
     public void ResetWeapons()
     {
         foreach (var entry in Weapons)

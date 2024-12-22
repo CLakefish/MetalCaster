@@ -83,8 +83,6 @@ public class Weapon : MonoBehaviour
         WeaponData = ScriptableObject.CreateInstance<PlayerWeaponData>();
         WeaponData.Set(baseData);
 
-        WeaponData.shotCount = WeaponData.magazineSize;
-
         foreach (var mod in permanentModifications) mod.Modify(this);
         foreach (var mod in modifications)          mod.Modify(this);
     }

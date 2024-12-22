@@ -52,8 +52,6 @@ public class ModificationMenu : Menu
 
     private void Close()
     {
-        GameDataManager.Instance.Write();
-
         ClearAll();
 
         canvas.enabled = false;
@@ -75,7 +73,7 @@ public class ModificationMenu : Menu
         equippedMods.AddRange(weapon.modifications);
         unequippedMods.AddRange(modifications.Except(equippedMods));
 
-        Debug.Log("Equipped: " + equippedMods.Count + "\nBase:" + weapon.modifications.Count);
+        Debug.Log("Equipped: " + equippedMods.Count + "\nBase: " + weapon.modifications.Count);
 
         for (int i = 0; i < equippedMods.Count; i++)
         {

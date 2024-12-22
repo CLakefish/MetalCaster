@@ -12,6 +12,7 @@ public class PlayerWeapon : Player.PlayerComponent
 
     [Header("Collisions")]
     [SerializeField] private LayerMask collisionLayers;
+    private Dictionary<string, int> bulletMap = new();
 
     private (Weapon Weapon, GameObject Viewmodel) Selected;
     private int selectedIndex = 0;
@@ -93,10 +94,22 @@ public class PlayerWeapon : Player.PlayerComponent
             return;
         }
 
-        weapons = GameDataManager.Instance.ActiveSave.GetWeapons();
+        var weapon = GameDataManager.Instance.ActiveSave.UpdateWeapon(weapons[selectedIndex]);
 
-        Selected.Viewmodel = Instantiate(weapons[selectedIndex].gameObject, viewmodelHolder, false);
-        Selected.Weapon    = Selected.Viewmodel.GetComponent<Weapon>();
+        Selected.Viewmodel     = Instantiate(weapon.gameObject, viewmodelHolder, false);
+        Selected.Weapon        = Selected.Viewmodel.GetComponent<Weapon>();
+        weapons[selectedIndex] = weapon;
+
+        if (!bulletMap.ContainsKey(Selected.Weapon.WeaponName)) {
+            bulletMap.Add(Selected.Weapon.WeaponName, Selected.Weapon.WeaponData.magazineSize);
+            Selected.Weapon.WeaponData.shotCount = Selected.Weapon.WeaponData.magazineSize;
+        }
+        else {
+            Selected.Weapon.WeaponData.shotCount = bulletMap[Selected.Weapon.WeaponName];
+        }
+
+        Fire           += () => { bulletMap[Selected.Weapon.WeaponName] = Selected.Weapon.WeaponData.shotCount;    };
+        ReloadFinished += () => { bulletMap[Selected.Weapon.WeaponName] = Selected.Weapon.WeaponData.magazineSize; };
 
         Selected.Weapon.Equip(this);
 
@@ -109,6 +122,8 @@ public class PlayerWeapon : Player.PlayerComponent
 
         weapons.Add(weapon);
 
+        GameDataManager.Instance.ActiveSave.SaveWeapon(weapon);
+
         if (equip)
         {
             selectedIndex = weapons.Count - 1;
@@ -116,8 +131,6 @@ public class PlayerWeapon : Player.PlayerComponent
         }
 
         Added?.Invoke(weapon);
-
-        GameDataManager.Instance.ActiveSave.SaveWeapon(weapon);
 
         return true;
     }
@@ -127,6 +140,7 @@ public class PlayerWeapon : Player.PlayerComponent
         int index = weapons.IndexOf(weapon);
         if (index < 0) return false;
 
+        GameDataManager.Instance.ActiveSave.RemoveWeapon(weapon);
         weapons.Remove(weapon);
 
         if (index == selectedIndex)
@@ -150,11 +164,11 @@ public class PlayerWeapon : Player.PlayerComponent
             Destroy(Selected.Viewmodel);
         }
 
+        if (bulletMap.ContainsKey(weapon.WeaponName)) bulletMap.Remove(weapon.WeaponName);
+
         weapon.modifications.Clear();
 
         Removed?.Invoke(weapon);
-
-        GameDataManager.Instance.ActiveSave.RemoveWeapon(weapon);
 
         return true;
     }
