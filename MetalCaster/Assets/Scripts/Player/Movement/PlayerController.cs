@@ -6,13 +6,14 @@ using UnityEngine;
 // Concept recommendations and help by Oliver Beebe
 
 // TODO:
-// - Better line visuals for guns (deviation preservation for misses)
-// - Pause Menu
-// - Modification Menu
-// - Weapon modification in game UI
-// - Save system
-// - Saving/loading modifications
-// - UI
+// - Better modification menu rotation (Do Tomorrow)
+// - Save modifications in the slots they were applied in (Do Tomorrow)
+// - Pause Menu (Do Tomorrow if Time)
+// - Weapon Swap Menu (Do Tuesday)
+// - Modifications :)
+// - Enemies :)
+// - 
+
 
 public class PlayerController : Player.PlayerComponent
 {

@@ -144,7 +144,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 1
+  m_Radius: 0.75
   m_Height: 4
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
@@ -234,7 +234,7 @@ MonoBehaviour:
   nav: {fileID: 0}
   hp: {fileID: 0}
   stunTime: 0.5
-  delayStagger: 0.25
+  pingDelay: 0.25
   knockbackForce: {x: 20, y: 10}
   gravity: 46
   groundLayer:

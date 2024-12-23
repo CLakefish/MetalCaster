@@ -24,7 +24,7 @@ public class BasicShot : WeaponModification
         Vector3 toPlayer    = -(start - end).normalized;
         Quaternion rotation = Quaternion.LookRotation(Vector3.ProjectOnPlane(toPlayer, hit.normal), hit.normal);
 
-        if (Vector3.Angle(Vector3.up, hit.normal) >= 89.0f) {
+        if (Vector3.Angle(Vector3.up, hit.normal) == 90f) {
             rotation = Quaternion.Euler(-90, rotation.eulerAngles.y, rotation.eulerAngles.z);
         }
 

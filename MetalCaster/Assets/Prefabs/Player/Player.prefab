@@ -266,6 +266,7 @@ MonoBehaviour:
   modificationItem: {fileID: 4240436776142356323, guid: 3d9155135ef464f42b8278b1ba196719, type: 3}
   modificationSelectPrefab: {fileID: 3156403915109670796, guid: da754a53401bfbc499542184f8bb0444, type: 3}
   modificationSlotPrefab: {fileID: 501368341877888836, guid: b052649b8021632469a8c9e92d27f63c, type: 3}
+  popup: {fileID: 0}
   timeChangeSpeed: 0.1
 --- !u!1 &2594694779388192825
 GameObject:
@@ -1367,7 +1368,7 @@ MonoBehaviour:
   cam: {fileID: 7629597577283122512}
   viewRotationSmoothing: 0.2
   fov: 90
-  viewmodelCamera: {fileID: 0}
+  viewmodelCamera: {fileID: 198139968923518383}
   viewmodelRecoilHolder: {fileID: 8840151988085244611}
   viewmodelRecoil: {x: 6, y: 12, z: 12}
   viewmodelKickbackSpeed: 0.2

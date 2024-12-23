@@ -29,6 +29,12 @@ public class ModificationMenu : Menu
     [SerializeField] private GameObject modificationSlotPrefab;
     [SerializeField] private Popup popup;
 
+    [Header("Menu Camera")]
+    [SerializeField] private Camera menuCamera;
+    [SerializeField] private Camera modelCamera;
+    [SerializeField] private float menuSmoothTime;
+    [SerializeField] private float rotateReturnSpeed;
+
     [Header("Interpolation")]
     [SerializeField] private float timeChangeSpeed;
 
@@ -38,6 +44,7 @@ public class ModificationMenu : Menu
     private readonly List<GameObject> slots       = new();
     private readonly List<GameObject> selectables = new();
 
+    private Coroutine modificationView;
     private Coroutine timeSlow;
 
     private void Open()
@@ -55,6 +62,10 @@ public class ModificationMenu : Menu
         PlayerCamera.enabled   = false;
         PlayerMovement.enabled = false;
         PlayerHUD.gameObject.SetActive(false);
+
+        menuCamera.enabled = modelCamera.enabled = true;
+        Vector3 pos = menuCamera.transform.parent.InverseTransformPoint(PlayerWeapon.Weapon.CameraPos.position);
+        MoveMenuCamera(pos, true);
 
         DisplayWeaponSlots();
     }
@@ -76,6 +87,8 @@ public class ModificationMenu : Menu
         PlayerWeapon.MenuOpen  = false;
         PlayerCamera.MouseLock = true;
         PlayerHUD.gameObject.SetActive(true);
+
+        MoveMenuCamera(Vector3.zero, false);
 
         isActive = false;
     }
@@ -165,12 +178,46 @@ public class ModificationMenu : Menu
         Time.timeScale = end;
     }
 
+    private void MoveMenuCamera(Vector3 pos, bool enabled)
+    {
+        if (modificationView != null) StopCoroutine(modificationView);
+        modificationView = StartCoroutine(MoveRender(pos, enabled));
+    }
+
+    private IEnumerator MoveRender(Vector3 pos, bool enabled)
+    {
+        Vector3 vel = Vector3.zero;
+
+        while (Vector3.Distance(pos, menuCamera.transform.localPosition) > 0.001f)
+        {
+            // https://medium.com/@meravonya/difference-between-quaternion-and-lookat-in-unity-6be1eca20c7f
+            menuCamera.transform.localPosition = Vector3.SmoothDamp(menuCamera.transform.localPosition, pos, ref vel, menuSmoothTime, Mathf.Infinity, Time.unscaledDeltaTime);
+
+            if (enabled) {
+                // https://matteolopiccolo.medium.com/math-in-unity-lookat-5a9eb2b36fc6
+                menuCamera.transform.LookAt(PlayerWeapon.Weapon.CameraPos.right, PlayerCamera.CameraTransform.up);
+            }
+            else {
+                menuCamera.transform.localRotation = Quaternion.RotateTowards(menuCamera.transform.localRotation, Quaternion.identity, Time.unscaledDeltaTime * rotateReturnSpeed);
+            }
+
+            yield return null;
+        }
+
+        menuCamera.transform.localPosition = pos;
+        menuCamera.enabled = modelCamera.enabled = enabled;
+    }
+
     private void Update()
     {
         if (PlayerInput.Reload && PlayerWeapon.Weapon != null)
         {
             if (IsActive) Close();
             else          Open();
+        }
+
+        if (isActive) {
+            menuCamera.fieldOfView = PlayerCamera.Camera.fieldOfView;
         }
     }
 }

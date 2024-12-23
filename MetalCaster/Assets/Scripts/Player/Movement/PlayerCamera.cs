@@ -60,6 +60,10 @@ public class PlayerCamera : Player.PlayerComponent
         get { return cam; }
     }
 
+    public Camera ViewmodelCamera {
+        get { return viewmodelCamera; }
+    }
+
     public Vector3 CameraForward { 
         get { 
             return cam.transform.forward;
