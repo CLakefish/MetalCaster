@@ -190,12 +190,16 @@ public class ModificationMenu : Menu
 
         while (Vector3.Distance(pos, menuCamera.transform.localPosition) > 0.001f)
         {
-            // https://medium.com/@meravonya/difference-between-quaternion-and-lookat-in-unity-6be1eca20c7f
             menuCamera.transform.localPosition = Vector3.SmoothDamp(menuCamera.transform.localPosition, pos, ref vel, menuSmoothTime, Mathf.Infinity, Time.unscaledDeltaTime);
 
             if (enabled) {
                 // https://matteolopiccolo.medium.com/math-in-unity-lookat-5a9eb2b36fc6
-                menuCamera.transform.LookAt(PlayerWeapon.Weapon.CameraPos.right, PlayerCamera.CameraTransform.up);
+                //menuCamera.transform.LookAt(PlayerWeapon.Weapon.CameraPos.right, PlayerCamera.CameraTransform.up);
+                Vector3 dir     = PlayerWeapon.Weapon.CameraPos.right;
+                Vector3 up      = PlayerCamera.CameraTransform.up;
+                Quaternion look = Quaternion.LookRotation(dir, up);
+
+                menuCamera.transform.rotation = Quaternion.RotateTowards(menuCamera.transform.rotation, look, Time.unscaledDeltaTime * rotateReturnSpeed);
             }
             else {
                 menuCamera.transform.localRotation = Quaternion.RotateTowards(menuCamera.transform.localRotation, Quaternion.identity, Time.unscaledDeltaTime * rotateReturnSpeed);
@@ -217,7 +221,8 @@ public class ModificationMenu : Menu
         }
 
         if (isActive) {
-            menuCamera.fieldOfView = PlayerCamera.Camera.fieldOfView;
+            menuCamera.fieldOfView  = PlayerCamera.Camera.fieldOfView;
+            modelCamera.fieldOfView = PlayerCamera.ViewmodelCamera.fieldOfView;
         }
     }
 }

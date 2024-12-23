@@ -12,9 +12,6 @@ public class PlayerWeaponData : ScriptableObject
         Other
     }
 
-    [Header("Unlocked")]
-    [SerializeField] private bool unlocked;
-
     [Header("Weapon Data")]
     [SerializeField] public int damage;
     [SerializeField] public int magazineSize;
@@ -36,8 +33,6 @@ public class PlayerWeaponData : ScriptableObject
     [HideInInspector] public int shotCount = 0;
     [HideInInspector] public int ricochetCount = 0;
     [HideInInspector] public float prevFireTime = 0;
-
-    public bool Unlocked => unlocked;
 
     public void Set(PlayerWeaponData other)
     {
