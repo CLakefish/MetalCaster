@@ -7942,6 +7942,12 @@ MonoBehaviour:
   startPosition: {fileID: 1841031160}
   endPosition: {fileID: 569038762}
   moveSpeed: 0.2
+  bobSpeed: 2
+  bobIntensity: 3
+  rotateSpeedZ: 1
+  rotateSpeedX: 4
+  rotateIntensityZ: 2
+  rotateIntensityX: 4
 --- !u!114 &511297054
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -12,7 +12,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7fe0d1457b0f2844b913ccd0196dcf52, type: 3}
   m_Name: New Save
   m_EditorClassIdentifier: 
-  saveName: 
-  saveTime: 0
-  modifications: []
-  weapons: []
+  saveName: New Save.json
+  saveTime: 1357.2285
+  modifications:
+  - {fileID: 11400000, guid: e7d384f0b84ed734dbd9f27c01fa2daf, type: 2}
+  - {fileID: 11400000, guid: 7538e357e68109d4982018a5a17cf72b, type: 2}
+  - {fileID: 11400000, guid: c163a457b8917e544802b7da135a8ae1, type: 2}
+  - {fileID: 11400000, guid: 376a357f171b5334b80de31a404f6316, type: 2}
+  - {fileID: 11400000, guid: 7a43ad14fc31b2d44a898e2d57f8052a, type: 2}
+  weapons:
+  - weaponName: 1
+    modificationNames:
+    - Ricochet
+    - Big Burst
+    permanentModificationNames:
+    - Line Rendering
+  - weaponName: 2
+    modificationNames:
+    - Ricochet
+    permanentModificationNames:
+    - Line Rendering
