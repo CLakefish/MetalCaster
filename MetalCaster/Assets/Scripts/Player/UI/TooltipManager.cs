@@ -11,8 +11,10 @@ public class TooltipManager : MonoBehaviour
     [SerializeField] private RectTransform startPosition;
     [SerializeField] private RectTransform endPosition;
     [SerializeField] private float moveSpeed;
-    private RectTransform desiredPos;
+    [SerializeField] private float bobSpeed, bobIntensity;
+    [SerializeField] private float rotateSpeedZ, rotateSpeedX, rotateIntensityZ, rotateIntensityX;
     private Coroutine position;
+    private Vector3 velocity = Vector3.zero;
 
     private void OnEnable() {
         if (Instance == null) Instance = this;
@@ -24,28 +26,25 @@ public class TooltipManager : MonoBehaviour
         popup.gameObject.SetActive(false);
     }
 
+    private void Update()
+    {
+        if (popup.gameObject.activeSelf)
+        {
+            popup.transform.eulerAngles = new Vector3(Mathf.Cos(Time.unscaledTime * rotateSpeedX) * rotateIntensityX, 0, Mathf.Sin(Time.unscaledTime * rotateSpeedZ) * rotateIntensityZ);
+        }
+    }
+
     public void DisplayPopup(WeaponModification mod)
     {
-        if (position != null) {
-            StopCoroutine(position);
-        }
-
+        popup.Set(mod.ModificationName, mod.Description);
         popup.gameObject.SetActive(true);
         HandleMovement(endPosition, true);
-        popup.Set(mod.ModificationName, mod.Description);
     }
 
-    public void HidePopup()
-    {
-        HandleMovement(startPosition, false);
-    }
+    public void HidePopup() => HandleMovement(startPosition, false);
 
     private void HandleMovement(RectTransform pos, bool active)
     {
-        if (pos == desiredPos) return;
-
-        desiredPos = pos;
-
         if (position != null) {
             StopCoroutine(position);
         }
@@ -55,11 +54,12 @@ public class TooltipManager : MonoBehaviour
 
     private IEnumerator MovePosition(RectTransform pos, bool active)
     {
-        Vector3 velocity = Vector3.zero;
-
         while (Vector3.Distance(pos.position, popup.transform.position) > Mathf.Epsilon)
         {
-            popup.transform.position = Vector3.SmoothDamp(popup.transform.position, pos.position, ref velocity, moveSpeed, Mathf.Infinity, Time.unscaledDeltaTime);
+            Vector3 desiredPos = pos.position;
+            desiredPos        += Vector3.up * (Mathf.Sin(Time.unscaledTime * bobSpeed) * bobIntensity);
+
+            popup.transform.position = Vector3.SmoothDamp(popup.transform.position, desiredPos, ref velocity, moveSpeed, Mathf.Infinity, Time.unscaledDeltaTime);
             yield return null;
         }
 

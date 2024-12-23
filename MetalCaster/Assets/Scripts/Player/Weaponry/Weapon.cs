@@ -66,6 +66,8 @@ public class Weapon : MonoBehaviour
 
         modifications.Add(data);
         ReloadModifications();
+
+        WeaponData.shotCount = WeaponData.magazineSize;
     }
 
     public void RemoveModification(WeaponModification data)
@@ -74,6 +76,8 @@ public class Weapon : MonoBehaviour
 
         modifications.Remove(data);
         ReloadModifications();
+
+        WeaponData.shotCount = WeaponData.magazineSize;
     }
 
     private void ReloadModifications()
