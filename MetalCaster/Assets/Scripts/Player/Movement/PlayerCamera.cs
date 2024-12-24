@@ -189,8 +189,6 @@ public class PlayerCamera : Player.PlayerComponent
         recoil.z = 0;
 
         cam.transform.localRotation = Quaternion.Euler(new Vector3(mouseRotation.x, mouseRotation.y, currentZ));
-        cam.transform.position      = PlayerMovement.rb.transform.position + (Vector3.up * standingHeight);
-
         desiredPos = Vector3.SmoothDamp(desiredPos, startPos, ref posVel, viewmodelKickbackSpeed);
 
         viewmodelRecoilHolder.transform.localPosition = desiredPos;

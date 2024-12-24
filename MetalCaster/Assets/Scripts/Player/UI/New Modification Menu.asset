@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7236a571fd60c9b4fb3775ef869afd40, type: 3}
+  m_Name: New Modification Menu
+  m_EditorClassIdentifier: 
+  modifications: []
+  canvas: {fileID: 0}
+  slotHolder: {fileID: 0}
+  selectedHolder: {fileID: 0}
+  modificationItem: {fileID: 0}
+  modificationSelectPrefab: {fileID: 0}
+  modificationSlotPrefab: {fileID: 0}
+  popup: {fileID: 0}
+  menuCamera: {fileID: 0}
+  modelCamera: {fileID: 0}
+  menuSmoothTime: 0
+  rotateReturnSpeed: 0
+  timeChangeSpeed: 0

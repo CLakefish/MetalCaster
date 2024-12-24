@@ -23,7 +23,7 @@ public class ModificationDraggable : Draggable, IPointerEnterHandler, IPointerEx
     public override void OnBeginDrag(PointerEventData eventData)
     {
         if (transform.parent.TryGetComponent(out ModificationSlot slot)) {
-            slot.Menu.GetWeapon().Weapon.RemoveModification(modification);
+            //slot.Menu.GetWeapon().Weapon.RemoveModification(modification);
             onDrop?.Invoke();
         }
 
@@ -37,7 +37,7 @@ public class ModificationDraggable : Draggable, IPointerEnterHandler, IPointerEx
         base.OnEndDrag(eventData);
 
         if (transform.parent.TryGetComponent(out ModificationSlot slot)) {
-            slot.Menu.GetWeapon().Weapon.AddModification(modification);
+            //slot.Menu.GetWeapon().Weapon.AddModification(modification);
             onDrop?.Invoke();
         }
     }

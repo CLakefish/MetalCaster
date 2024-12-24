@@ -30,14 +30,16 @@ public class Weapon : MonoBehaviour
 
     [Header("Viewmodel Shenanigans")]
     [SerializeField] private Transform muzzlePosition;
-    [SerializeField] private Transform cameraPos;
+    [SerializeField] private Transform modificationPos;
+    [SerializeField] private Transform menuPos;
 
     public PlayerWeaponData WeaponData { get; set; }
     public PlayerWeapon PlayerWeapon   { get; private set; }
     public Vector3 StartPos            { get; private set; }
 
-    public Transform MuzzlePos => muzzlePosition;
-    public Transform CameraPos => cameraPos;
+    public Transform MuzzlePos       => muzzlePosition;
+    public Transform MenuPos         => menuPos;
+    public Transform ModificationPos => modificationPos;
 
     public string WeaponName => weaponName;
 

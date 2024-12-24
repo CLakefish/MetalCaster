@@ -9,10 +9,10 @@ public class Player : MonoBehaviour
     [SerializeField] private PlayerInput      playerInput;
     [SerializeField] private PlayerWeapon     playerWeapon;
     [SerializeField] private PlayerHealth     playerHealth;
-    [SerializeField] private PlayerHUD        playerHUD;
 
-    [Header("Menus")]
-    [SerializeField] private List<Menu> menus;
+    [Header("UI")]
+    [SerializeField] private PlayerHUD playerHUD;
+    [SerializeField] private PauseMenu pauseMenu;
 
     [Header("Physics")]
     [SerializeField] public Rigidbody rb;
@@ -35,8 +35,7 @@ public class Player : MonoBehaviour
         playerInput.SetPlayer(this);
         playerWeapon.SetPlayer(this);
         playerHUD.SetPlayer(this);
-
-        foreach (var menu in menus) menu.SetPlayer(this);
+        pauseMenu.SetPlayer(this);
     }
 
     public class PlayerComponent : MonoBehaviour

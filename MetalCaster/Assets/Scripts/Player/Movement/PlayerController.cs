@@ -658,9 +658,6 @@ public class PlayerController : Player.PlayerComponent
             // May cause a few things here and there, will need to stress test to confirm
             if (Vector3.SignedAngle(projected, context.PlayerCamera.CameraForward, Vector3.up) <= context.wallRunAngleChangeMax) return;
 
-            // Ensuring it doesnt set your velocity to 0
-            if (new Vector3(projected.x, 0, projected.z).magnitude == 0) return;
-
             projected *= Mathf.Max(context.wallRunSpeed, context.rb.linearVelocity.magnitude);
 
             float downwardForce = context.rb.linearVelocity.y > 0 

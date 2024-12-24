@@ -36,7 +36,7 @@ public class PlayerWeapon : Player.PlayerComponent
     public GameObject Viewmodel => Selected.Viewmodel;
     public Weapon Weapon        => Selected.Weapon;
 
-    private void OnEnable() => SelectWeapon();
+    public Transform ViewmodelHolder => viewmodelHolder;
 
     private void Start()
     {

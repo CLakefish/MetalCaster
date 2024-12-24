@@ -4,23 +4,11 @@ using System.Linq;
 using System.Collections;
 using UnityEngine.UI;
 
-public class Menu : Player.PlayerComponent
+[CreateAssetMenu(menuName = "Menus/Sub Menus/Modification Menu")]
+public class ModificationMenu : SubMenu
 {
-    [SerializeField] protected bool isActive;
-
-    public bool IsActive => isActive;
-
-    public System.Action OnOpen;
-    public System.Action OnClose;
-}
-
-public class ModificationMenu : Menu
-{
-    [Header("Weapon References")]
-    [SerializeField] private List<WeaponModification> modifications = new();
-
     [Header("UI References")]
-    [SerializeField] private Canvas canvas;
+    [SerializeField] private Canvas modificationCanvas;
     [SerializeField] private Transform slotHolder, selectedHolder;
 
     [Header("Prefabs")]
@@ -29,28 +17,28 @@ public class ModificationMenu : Menu
     [SerializeField] private GameObject modificationSlotPrefab;
     [SerializeField] private Popup popup;
 
-    [Header("Menu Camera")]
-    [SerializeField] private Camera menuCamera;
-    [SerializeField] private Camera modelCamera;
-    [SerializeField] private float menuSmoothTime;
-    [SerializeField] private float rotateReturnSpeed;
-
-    [Header("Interpolation")]
-    [SerializeField] private float timeChangeSpeed;
-
     private readonly List<WeaponModification> equippedMods   = new();
     private readonly List<WeaponModification> unequippedMods = new();
+    private readonly List<GameObject>         slots          = new();
+    private readonly List<GameObject>         selectables    = new();
 
-    private readonly List<GameObject> slots       = new();
-    private readonly List<GameObject> selectables = new();
+    public override void OnOpen()
+    {
+        context.MoveMenuCamera(context.GetCamera().Camera.transform.InverseTransformPoint(context.GetWeapon().Weapon.ModificationPos.position), true);
 
-    private Coroutine modificationView;
-    private Coroutine timeSlow;
+        base.OnOpen();
+    }
 
+    public override void OnClose()
+    {
+        context.MoveMenuCamera(context.GetCamera().Camera.transform.InverseTransformPoint(context.GetWeapon().Weapon.MenuPos.position), true);
+
+        base.OnClose();
+    }
+
+            /*
     private void Open()
     {
-        if (timeSlow != null) StopCoroutine(timeSlow);
-        timeSlow = StartCoroutine(TimeSlow(0));
 
         canvas.enabled = true;
 
@@ -75,9 +63,6 @@ public class ModificationMenu : Menu
         ClearAll();
 
         TooltipManager.Instance.HidePopup();
-
-        if (timeSlow != null) StopCoroutine(timeSlow);
-        timeSlow = StartCoroutine(TimeSlow(1));
 
         canvas.enabled = false;
 
@@ -165,19 +150,6 @@ public class ModificationMenu : Menu
         }
     }
 
-    private IEnumerator TimeSlow(float end)
-    {
-        float velocity = 0;
-
-        while (Mathf.Abs(Time.timeScale - end) > Mathf.Epsilon)
-        {
-            Time.timeScale = Mathf.SmoothDamp(Time.timeScale, end, ref velocity, timeChangeSpeed, Mathf.Infinity, Time.unscaledDeltaTime);
-            yield return null;
-        }
-
-        Time.timeScale = end;
-    }
-
     private void MoveMenuCamera(Vector3 pos, bool enabled)
     {
         if (modificationView != null) StopCoroutine(modificationView);
@@ -225,4 +197,5 @@ public class ModificationMenu : Menu
             modelCamera.fieldOfView = PlayerCamera.ViewmodelCamera.fieldOfView;
         }
     }
+            */
 }
