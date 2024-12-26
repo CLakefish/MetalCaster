@@ -35,16 +35,7 @@
                 {
                     "name": "Slide",
                     "type": "Button",
-                    "id": "03e7aa29-cd00-4419-b183-767d730be7fa",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "Reload",
-                    "type": "Button",
-                    "id": "a4b634c6-de72-4e11-97bd-aa8ce14da917",
+                    "id": "8639d173-336d-4dd9-b114-c73f3bcfd45f",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -142,23 +133,12 @@
                 },
                 {
                     "name": "",
-                    "id": "e40e0e7f-5c8e-4b7e-b473-4e1ced7be611",
+                    "id": "71ad3e54-00ee-495d-b160-7cb5fb3dd594",
                     "path": "<Keyboard>/leftShift",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
                     "action": "Slide",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "45b79775-8f49-4d44-950b-c8d035bd8357",
-                    "path": "<Keyboard>/r",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Reload",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -218,6 +198,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "Reload",
+                    "type": "Button",
+                    "id": "3abeb76d-a560-475a-8823-f8b1709e5ea2",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "MouseLeft",
                     "type": "Button",
                     "id": "5651ff10-a100-4ed6-bdbd-4f69a319ce0e",
@@ -267,6 +256,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "MouseRight",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "96dbf7a9-4aa0-4f86-b528-554c6ce011f3",
+                    "path": "<Keyboard>/r",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Reload",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

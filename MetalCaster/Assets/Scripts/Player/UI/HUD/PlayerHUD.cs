@@ -21,10 +21,25 @@ public class PlayerHUD : Player.PlayerComponent
     private readonly Dictionary<Weapon, RectTransform> equippedWeaponHUD = new();
     private Weapon selectedWeapon;
 
-    private void Start()
+
+    private void OnEnable()
     {
-        PlayerWeapon.Fire           += SetAmmoCount;
-        PlayerWeapon.ReloadStart    += () => ammoCount.text = "RELOADING";
+        canvas.enabled = true;
+    }
+
+    private void OnDisable()
+    {
+        canvas.enabled = false;
+    }
+
+    private void Awake() {
+        UpdateUI();
+    }
+
+    public void UpdateUI()
+    {
+        PlayerWeapon.Fire += SetAmmoCount;
+        PlayerWeapon.ReloadStart += () => ammoCount.text = "RELOADING";
         PlayerWeapon.ReloadFinished += SetAmmoCount;
 
         PlayerWeapon.Added += (Weapon weapon) =>
@@ -36,8 +51,11 @@ public class PlayerHUD : Player.PlayerComponent
 
         PlayerWeapon.Removed += (Weapon weapon) =>
         {
-            Destroy(equippedWeaponHUD[weapon].gameObject);
-            equippedWeaponHUD.Remove(weapon);
+            if (equippedWeaponHUD.ContainsKey(weapon))
+            {
+                Destroy(equippedWeaponHUD[weapon].gameObject);
+                equippedWeaponHUD.Remove(weapon);
+            }
         };
 
         PlayerWeapon.Swap += (Weapon weapon) =>

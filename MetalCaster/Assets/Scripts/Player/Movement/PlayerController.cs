@@ -188,7 +188,6 @@ public class PlayerController : Player.PlayerComponent
 
     private float previousDuration = 0;
     private float jumpBufferTime   = 0;
-    private float prevFloorPosY;
 
 
     private void OnEnable()
@@ -454,8 +453,6 @@ public class PlayerController : Player.PlayerComponent
 
             context.Move(context.moveSpeed, context.hfsm.Duration < context.groundMomentumConserveTime);
         }
-
-        public override void Exit() => context.prevFloorPosY = context.GroundPoint.y;
     }
 
     private class FallingState : State<PlayerController>
@@ -557,6 +554,7 @@ public class PlayerController : Player.PlayerComponent
                         : momentum;
 
                     Quaternion rotation     = Quaternion.FromToRotation(currentMomentum, desiredDirection);
+                    // Fix this :)
                     Quaternion interpolated = Quaternion.Slerp(Quaternion.identity, rotation, Time.fixedDeltaTime * context.slideRotationSpeed);
 
                     momentum = interpolated * momentum;
@@ -574,8 +572,6 @@ public class PlayerController : Player.PlayerComponent
             context.rb.linearVelocity         = momentum;
             context.DesiredHorizontalVelocity = new Vector2(momentum.x, momentum.z);
         }
-
-        public override void Exit() => context.prevFloorPosY = context.GroundPoint.y;
     }
 
     private class SlideJumping : State<PlayerController>
@@ -671,8 +667,6 @@ public class PlayerController : Player.PlayerComponent
         Vector3 GetProjected() {
             return Vector3.ProjectOnPlane(context.rb.linearVelocity, context.WallNormal).normalized;
         }
-
-        public override void Exit() => context.prevFloorPosY = context.rb.transform.position.y;
     }
 
     private class WallJumping : State<PlayerController>

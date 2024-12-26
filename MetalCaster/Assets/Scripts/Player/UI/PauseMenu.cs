@@ -1,16 +1,15 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.UI;
 
-public interface IMenu
-{
-    public virtual void OnOpen()        { }
-    public virtual void OnClose()       { }
-    public virtual void OnUpdate()      { }
-    public virtual void OnFixedUpdate() { }
-}
+public class SubMenu : MonoBehaviour {
+    [SerializeField] private string menuName;
 
-public class SubMenu : ScriptableObject, IMenu {
     protected PauseMenu context;
+
+    public string MenuName => menuName;
 
     public event System.Action Opened;
     public event System.Action Closed;
@@ -26,13 +25,22 @@ public class SubMenu : ScriptableObject, IMenu {
     public virtual void OnClose() {
         Closed?.Invoke();
     }
+
+    public virtual void OnUpdate() { }
 }
 
 public class PauseMenu : Player.PlayerComponent
 {
     [SerializeField] protected bool isActive;
-    [SerializeField] private Canvas canvas;
-    [SerializeField] private SubMenu modificationMenu;
+    [SerializeField] private List<SubMenu> subMenus = new();
+
+    [Header("Opened Menu Prefabs")]
+    [SerializeField] private Button menuButton;
+    [SerializeField] private Canvas worldspaceCanvas;
+    [SerializeField] private Transform buttonHolder;
+    [SerializeField] private float worldspaceCanvasScale;
+    private readonly List<Button> transitionButtons = new();
+    private Canvas worldCanvas;
 
     [Header("Menu Camera")]
     [SerializeField] private Camera menuCamera;
@@ -46,63 +54,145 @@ public class PauseMenu : Player.PlayerComponent
     public Camera MenuCamera  => menuCamera;
     public Camera ModelCamera => modelCamera;
 
+    public PlayerWeapon WeaponRef => PlayerWeapon;
+
     public bool IsActive => isActive;
 
     public event System.Action Opened;
     public event System.Action Closed;
 
+    private SubMenu   currentMenu = null;
     private Coroutine cameraView;
 
-    public void OnOpen() {
+    private void Update()
+    {
+        if (currentMenu != null) {
+            currentMenu.OnUpdate();
+
+            if (PlayerInput.Reload) {
+                currentMenu.OnClose();
+                currentMenu = null;
+            }
+        }
+        else
+        {
+            if (PlayerInput.Reload) {
+                if (IsActive) OnClose();
+                else          OnOpen();
+            }
+        }
+    }
+
+    private void OnOpen() {
         isActive = true;
+
         PlayerCamera.MouseLock = false;
+        PlayerWeapon.enabled   = false;
+        PlayerHUD.enabled      = false;
 
         Vector3 pos = PlayerCamera.Camera.transform.InverseTransformPoint(PlayerWeapon.Weapon.MenuPos.position);
-        MoveMenuCamera(pos, true);
+        MoveMenuCamera(pos, true, 
+            () => {
+                menuCamera.fieldOfView = PlayerCamera.Camera.fieldOfView;
+                modelCamera.fieldOfView = PlayerCamera.ViewmodelCamera.fieldOfView;
+
+                menuCamera.enabled = modelCamera.enabled = enabled;
+                PlayerCamera.enabled = false;
+            },
+            () => {
+                menuCamera.enabled   = modelCamera.enabled = true;
+                PlayerCamera.enabled = false;
+            }
+        );
 
         TimeManager.Instance.SetTime(0, timeInterpolateSpeed);
 
-        modificationMenu.Initialize(this);
+        DeleteButtons();
+        CreateButtons();
 
         Opened?.Invoke();
     }
 
-    public void OnClose() {
+    private void OnClose() {
         isActive = false;
-        PlayerCamera.MouseLock = true;
 
-        MoveMenuCamera(Vector3.zero, false);
+        PlayerCamera.MouseLock = true;
+        PlayerWeapon.enabled   = true;
+        PlayerHUD.enabled      = true;
+
+        MoveMenuCamera(Vector3.zero, false, null, () => {
+            menuCamera.enabled   = modelCamera.enabled = false;
+            PlayerCamera.enabled = true;
+        });
 
         TimeManager.Instance.SetTime(1, timeInterpolateSpeed);
+
+        DeleteButtons();
+        currentMenu = null;
 
         Closed?.Invoke();
     }
 
-
-    private void Update()
+    private void ChangeSubMenu(SubMenu newMenu)
     {
-        if (PlayerInput.Reload)
+        if (currentMenu != null) currentMenu.OnClose();
+        currentMenu = newMenu;
+        if (currentMenu != null) currentMenu.OnOpen();
+    }
+
+    private void CreateButtons()
+    {
+        void CreateButton(string text, UnityAction OnClick)
         {
-            if (!isActive) OnOpen();
-            else           OnClose();
+            Button button = Instantiate(menuButton, worldCanvas.transform.GetChild(0));
+            transitionButtons.Add(button);
+            button.onClick.AddListener(OnClick);
+
+            button.GetComponentInChildren<TMPro.TMP_Text>().text = text;
+        }
+
+        worldCanvas     = Instantiate(worldspaceCanvas, PlayerWeapon.Weapon.MenuHolder);
+        Vector3 dir     = PlayerWeapon.Weapon.MenuPos.right;
+        Vector3 up      = PlayerCamera.CameraTransform.up;
+        Quaternion look = Quaternion.LookRotation(dir, up);
+
+        worldCanvas.transform.rotation         = look;
+        worldCanvas.transform.localEulerAngles = new Vector3(worldCanvas.transform.localEulerAngles.x, worldCanvas.transform.localEulerAngles.y, 0);
+        worldCanvas.worldCamera = modelCamera;
+
+        CreateButton("Resume", () => { OnClose(); });
+
+        foreach (var subMenu in subMenus)
+        {
+            subMenu.Initialize(this);
+            CreateButton(subMenu.MenuName, () => { ChangeSubMenu(subMenu); });
+        }
+
+        CreateButton("Quit", () => { Application.Quit(); });
+
+        worldCanvas.transform.localScale = Vector3.one * worldspaceCanvasScale;
+    }
+
+    private void DeleteButtons()
+    {
+        if (worldCanvas != null) Destroy(worldCanvas.gameObject);
+
+        if (transitionButtons.Count > 0)
+        {
+            foreach (var button in transitionButtons) Destroy(button.gameObject);
+            transitionButtons.Clear();
         }
     }
 
-    public void MoveMenuCamera(Vector3 pos, bool enabled) 
+    public void MoveMenuCamera(Vector3 pos, bool enabled, System.Action OnStart = null, System.Action OnEnd = null) 
     {
         if (cameraView != null) StopCoroutine(cameraView);
-        cameraView = StartCoroutine(MoveRender(pos, enabled));
+        cameraView = StartCoroutine(MoveRender(pos, enabled, OnStart, OnEnd));
     }
 
-    private IEnumerator MoveRender(Vector3 pos, bool enabled)
+    private IEnumerator MoveRender(Vector3 pos, bool enabled, System.Action OnStart, System.Action OnEnd)
     {
-        if (enabled) {
-            menuCamera.fieldOfView  = PlayerCamera.Camera.fieldOfView;
-            modelCamera.fieldOfView = PlayerCamera.ViewmodelCamera.fieldOfView;
-
-            menuCamera.enabled   = modelCamera.enabled = enabled;
-            PlayerCamera.enabled = false;
-        }
+        OnStart?.Invoke();
 
         Vector3 vel = Vector3.zero;
 
@@ -124,7 +214,6 @@ public class PauseMenu : Player.PlayerComponent
 
         menuCamera.transform.localPosition = pos;
 
-        menuCamera.enabled   = modelCamera.enabled = enabled;
-        PlayerCamera.enabled = !enabled;
+        OnEnd?.Invoke();
     }
 }

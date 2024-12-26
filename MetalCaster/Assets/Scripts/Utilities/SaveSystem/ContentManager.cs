@@ -17,8 +17,6 @@ public class ContentManager : MonoBehaviour
     {
         if (Instance == null) Instance = this;
 
-        DontDestroyOnLoad(gameObject);
-
         weaponLookup = new();
         modificationLookup = new();
 

@@ -62,7 +62,7 @@ public class PlayerInput : Player.PlayerComponent
 
     public bool Slide {
         get {
-            return slide.Held && !slide.Released;
+            return slide.Held;
         }
     }
 

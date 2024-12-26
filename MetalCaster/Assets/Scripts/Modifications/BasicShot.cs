@@ -5,13 +5,14 @@ public class BasicShot : WeaponModification
 {
     [SerializeField] private GameObject hitSpawn;
     [SerializeField] private int ricochetTotal;
+    [SerializeField] private float screenShakeDuration, screenShakeMagnitude;
 
     public override void Modify(Weapon context) {
         context.WeaponData.ricochetCount += ricochetTotal;
     }
 
     public override void OnFire(Weapon context) {
-        context.PlayerWeapon.GetCamera().Screenshake(1, 1);
+        context.PlayerWeapon.GetCamera().Screenshake(screenShakeDuration, screenShakeMagnitude);
     }
 
     public override void OnHit(Weapon context, RaycastHit hit, ref ShotPayload payload)

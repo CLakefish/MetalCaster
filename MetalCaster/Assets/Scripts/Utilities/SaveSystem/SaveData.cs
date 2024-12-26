@@ -157,12 +157,22 @@ public class SaveData : ScriptableObject
         foreach (string mod in temp.modificationNames)
         {
             var modRef = ContentManager.Instance.GetModificationByName(mod);
+            if (modRef == null)
+            {
+                Debug.LogError($"Modification '{mod}' not found! Skipping.");
+                continue;
+            }
             data.modifications.Add(modRef);
         }
 
         foreach (var mod in temp.permanentModificationNames)
         {
             var modRef = ContentManager.Instance.GetModificationByName(mod);
+            if (modRef == null)
+            {
+                Debug.LogError($"Modification '{mod}' not found! Skipping.");
+                continue;
+            }
             data.permanentModifications.Add(modRef);
         }
 

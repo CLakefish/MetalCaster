@@ -7,7 +7,7 @@ public class TimeManager : MonoBehaviour
 
     private Coroutine timeSlow;
 
-    private void Awake()
+    private void OnEnable()
     {
         if (Instance == null) Instance = this;
         DontDestroyOnLoad(gameObject);

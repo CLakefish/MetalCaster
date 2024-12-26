@@ -199,7 +199,7 @@
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Cube",
-                "value": "{\"m_Value\":{\"x\":24.32066535949707,\"y\":38.74156188964844,\"z\":11.744461059570313}}"
+                "value": "{\"m_Value\":{\"x\":-0.05947344750165939,\"y\":0.026669330894947053,\"z\":-0.027835574001073839}}"
             },
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
@@ -324,7 +324,7 @@
             {
                 "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
                 "key": "BevelEdges.size",
-                "value": "{\"m_Value\":7.5}"
+                "value": "{\"m_Value\":0.6399999856948853}"
             }
         ]
     }

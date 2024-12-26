@@ -17,7 +17,5 @@ public class InputScriptableObject : ScriptableObject
         action   = map.actions[bindName];
     }
 
-    public virtual void Update() { 
-        
-    }
+    public virtual void Update() { }
 }

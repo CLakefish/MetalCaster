@@ -15,19 +15,15 @@ public class ModificationDraggable : Draggable, IPointerEnterHandler, IPointerEx
     private const float EPSILON = 0.01f;
 
     public System.Action onDrop;
-    public System.Action showPopup;
-    public System.Action hidePopup;
 
     public void SetReferences(WeaponModification modification) => this.modification = modification;
 
     public override void OnBeginDrag(PointerEventData eventData)
     {
         if (transform.parent.TryGetComponent(out ModificationSlot slot)) {
-            //slot.Menu.GetWeapon().Weapon.RemoveModification(modification);
+            slot.Menu.PlayerWeapon.Weapon.RemoveModification(modification);
             onDrop?.Invoke();
         }
-
-        hidePopup?.Invoke();
 
         base.OnBeginDrag(eventData);
     }
@@ -37,7 +33,7 @@ public class ModificationDraggable : Draggable, IPointerEnterHandler, IPointerEx
         base.OnEndDrag(eventData);
 
         if (transform.parent.TryGetComponent(out ModificationSlot slot)) {
-            //slot.Menu.GetWeapon().Weapon.AddModification(modification);
+            slot.Menu.PlayerWeapon.Weapon.AddModification(modification);
             onDrop?.Invoke();
         }
     }

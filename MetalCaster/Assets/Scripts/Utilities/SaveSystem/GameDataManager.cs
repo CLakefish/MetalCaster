@@ -50,7 +50,6 @@ public class GameDataManager : MonoBehaviour
     private void Awake() 
     {
         if (Instance == null) Instance = this;
-        DontDestroyOnLoad(gameObject);
 
         saveFolderName = Path.Combine(Application.persistentDataPath, "MetalCaster Data");
 

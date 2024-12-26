@@ -32,6 +32,7 @@ public class Weapon : MonoBehaviour
     [SerializeField] private Transform muzzlePosition;
     [SerializeField] private Transform modificationPos;
     [SerializeField] private Transform menuPos;
+    [SerializeField] private Transform menuHolder;
 
     public PlayerWeaponData WeaponData { get; set; }
     public PlayerWeapon PlayerWeapon   { get; private set; }
@@ -40,6 +41,7 @@ public class Weapon : MonoBehaviour
     public Transform MuzzlePos       => muzzlePosition;
     public Transform MenuPos         => menuPos;
     public Transform ModificationPos => modificationPos;
+    public Transform MenuHolder      => menuHolder;
 
     public string WeaponName => weaponName;
 
