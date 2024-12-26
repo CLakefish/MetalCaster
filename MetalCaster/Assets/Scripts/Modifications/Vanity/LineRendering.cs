@@ -14,17 +14,17 @@ public class LineRendering : WeaponModification
         Destroy(line.gameObject, time);
     }
 
-    public override void OnHit(Weapon context, RaycastHit hit, ref WeaponModificationData payload)
+    public override void OnHit(RaycastHit hit, ref Weapon.FireData data)
     {
-        if (payload.Get<bool>("firstShot")) {
-            InstantiateLine(context.PlayerWeapon.Viewmodel.transform.position, hit.point);
+        if (data.payload.Get<bool>("firstShot")) {
+            InstantiateLine(data.context.PlayerWeapon.Viewmodel.transform.position, hit.point);
         }
     }
 
-    public override void OnMiss(Weapon context, Vector3 dir, ref WeaponModificationData payload)
+    public override void OnMiss(ref Weapon.FireData data)
     {
-        if (payload.Get<bool>("firstShot")) {
-            InstantiateLine(context.PlayerWeapon.Viewmodel.transform.position, dir * 1000);
+        if (data.payload.Get<bool>("firstShot")) {
+            InstantiateLine(data.context.PlayerWeapon.Viewmodel.transform.position, data.direction * 1000);
         }
     }
 }

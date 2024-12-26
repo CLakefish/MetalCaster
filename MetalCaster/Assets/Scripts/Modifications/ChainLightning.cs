@@ -15,6 +15,7 @@ public class ChainLightning : WeaponModification
         context.WeaponData.ricochetCount += baseBounce;
     }
 
+    /*
     public override void OnFire(Weapon context)
     {
         Closest = (Mathf.Infinity, null);
@@ -79,5 +80,5 @@ public class ChainLightning : WeaponModification
         line.SetPosition(0, p0);
         line.SetPosition(1, p1);
         Destroy(line.gameObject, 0.5f);
-    }
+    }*/
 }

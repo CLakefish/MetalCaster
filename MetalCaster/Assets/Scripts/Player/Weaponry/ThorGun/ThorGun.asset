@@ -12,13 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: edd7fa62accba1048b8baae314314631, type: 3}
   m_Name: ThorGun
   m_EditorClassIdentifier: 
-  unlocked: 1
   damage: 1
-  magazineSize: 12
-  shotDeviation: 0.1
-  bulletsPerShot: 2
+  magazineSize: 1000
+  shotDeviation: 1
+  bulletsPerShot: 1
   type: 0
-  modificationSlots: 2
+  modificationSlots: 4
   fireTime: 0.2
   reloadTime: 0.5
   recoil: {x: 0.5, y: 0.1, z: 0.1}

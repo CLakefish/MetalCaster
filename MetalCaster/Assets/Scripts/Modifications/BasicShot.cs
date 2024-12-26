@@ -14,34 +14,34 @@ public class BasicShot : WeaponModification
         context.WeaponData.ricochetCount += ricochetTotal;
     }
 
-    public override void OnFire(Weapon context) {
-        context.PlayerWeapon.GetCamera().Screenshake(screenShakeDuration, screenShakeMagnitude);
+    public override void OnFire(ref Weapon.FireData data) {
+        //data.PlayerWeapon.GetCamera().Screenshake(screenShakeDuration, screenShakeMagnitude);
     }
 
-    public override void OnMiss(Weapon context, Vector3 dir, ref WeaponModificationData payload)
+    public override void OnMiss(ref Weapon.FireData data)
     {
-        if (payload.Contains("prevHit")) {
-            Vector3 prevHitPoint = payload.Get<Vector3>("prevHit");
-            InstantiateLine(prevHitPoint, dir.normalized * 1000);
+        if (data.payload.Contains("prevHit")) {
+            Vector3 prevHitPoint = data.payload.Get<Vector3>("prevHit");
+            InstantiateLine(prevHitPoint, data.direction.normalized * 1000);
         }
     }
 
-    public override void OnHit(Weapon context, RaycastHit hit, ref WeaponModificationData payload)
+    public override void OnHit(RaycastHit hit, ref Weapon.FireData data)
     {
-        int ricochetCount = payload.Get<int>("ricochet");
-        if (ricochetCount <= 0 && context.WeaponData.ricochetCount != 0) return;
+        int ricochetCount = data.payload.Get<int>("ricochet");
+        if (ricochetCount <= 0 && data.weaponData.ricochetCount != 0) return;
 
-        bool firstShot = payload.Get<bool>("firstShot");
+        bool firstShot = data. payload.Get<bool>("firstShot");
         if (!firstShot) {
             ricochetCount--;
-            payload.Set(ricochetCount, "ricochet");
+            data.payload.Set(ricochetCount, "ricochet");
         }
 
-        if (payload.Get<Vector3>("prevHit") == Vector3.zero) {
-            payload.Set(context.MuzzlePos.position, "prevHit");
+        if (data.payload.Get<Vector3>("prevHit") == Vector3.zero) {
+            data.payload.Set(data.context.MuzzlePos.position, "prevHit");
         }
 
-        Vector3 start       = context.PlayerWeapon.GetCamera().CameraTransform.position;
+        Vector3 start       = data.context.PlayerWeapon.GetCamera().CameraTransform.position;
         Vector3 end         = hit.point;
         Vector3 toPlayer    = -(start - end).normalized;
         Quaternion rotation = Quaternion.LookRotation(Vector3.ProjectOnPlane(toPlayer, hit.normal), hit.normal);
@@ -52,12 +52,12 @@ public class BasicShot : WeaponModification
 
         Instantiate(hitSpawn, hit.point + (hit.normal / 10.0f), rotation);
 
-        Vector3 prevHit = payload.Get<Vector3>("prevHit");
+        Vector3 prevHit = data.payload.Get<Vector3>("prevHit");
         Vector3 reflected = Vector3.Reflect((hit.point - prevHit).normalized, hit.normal);
 
-        context.FireImmediate(hit.point, reflected, ref payload);
+        data.context.FireImmediate(hit.point, reflected, ref data.payload);
         InstantiateLine(prevHit, hit.point);
-        payload.Set(hit.point, "prevHit");
+        data.payload.Set(hit.point, "prevHit");
     }
 
     private void InstantiateLine(Vector3 p0, Vector3 p1)
