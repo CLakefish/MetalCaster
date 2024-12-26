@@ -20,14 +20,32 @@ public class ChainLightning : WeaponModification
         Closest = (Mathf.Infinity, null);
     }
 
-    public override void OnHit(Weapon context, RaycastHit hit, ref ShotPayload payload)
+    public override void OnHit(Weapon context, RaycastHit hit, ref WeaponModificationData payload)
     {
-        if (payload.ricochetTotal <= 0 && context.WeaponData.ricochetCount != 0) return;
-        if (hit.collider.GetComponent<Health>() == null) return;
+        int ricochetCount = payload.Get<int>("ricochet");
+        if (ricochetCount <= 0 && context.WeaponData.ricochetCount != 0) return;
 
-        payload.ricochetTotal--;
+        if (!hit.collider.TryGetComponent<Health>(out Health hp)) return;
 
-        payload.hashSet.Add(hit.collider.gameObject);
+        bool firstShot = payload.Get<bool>("firstShot");
+        if (!firstShot)
+        {
+            ricochetCount--;
+            payload.Set(ricochetCount, "ricochet");
+        }
+
+        if (payload.Contains("hashSet"))
+        {
+            HashSet<Health> hashSet = payload.Get<HashSet<Health>>("hashSet");
+            hashSet.Add(hp);
+            payload.Set(hashSet, "hashSet");
+        }
+        else
+        {
+            HashSet<Health> hashSet = new() { hp };
+            payload.Set(hashSet, "hashSet");
+        }
+
 
         Closest = (Mathf.Infinity, null);
 
@@ -35,8 +53,8 @@ public class ChainLightning : WeaponModification
 
         foreach (var collider in colliders)
         {
-            if (!collider.TryGetComponent(out Health _)) continue;
-            if (payload.hashSet.Contains(collider.gameObject)) continue;
+            if (!collider.TryGetComponent(out Health enemyHP)) continue;
+            if (payload.Get<HashSet<Health>>("hashSet").Contains(enemyHP)) continue;
 
             float dist = Vector3.Distance(hit.collider.transform.position, collider.transform.position);
 
@@ -47,7 +65,7 @@ public class ChainLightning : WeaponModification
         }
 
         // Avoid weird VFX
-        if (Closest.obj == null || payload.ricochetTotal <= 0) return;
+        if (Closest.obj == null || ricochetCount <= 0) return;
 
         Vector3 dir = (Closest.obj.transform.position - hit.collider.transform.position).normalized;
 

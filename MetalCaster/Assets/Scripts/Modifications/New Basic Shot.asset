@@ -16,6 +16,8 @@ MonoBehaviour:
   description: Every bullet fired will ricochet
   modificationSprite: {fileID: 21300000, guid: a28468a4e1b124b4d9a4d0abdd8d12ca, type: 3}
   hitSpawn: {fileID: 7149526667413304157, guid: fc9228bbce9d5314ebd2931793bb7482, type: 3}
+  lineRenderer: {fileID: 2583496891296808985, guid: 5b5e2db404edca3408af9941fc4bfbea, type: 3}
+  lineTime: 0.5
   ricochetTotal: 2
   screenShakeDuration: 0
   screenShakeMagnitude: 0

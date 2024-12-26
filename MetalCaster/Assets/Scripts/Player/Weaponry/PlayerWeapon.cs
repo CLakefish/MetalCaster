@@ -94,7 +94,7 @@ public class PlayerWeapon : Player.PlayerComponent
             return;
         }
 
-        var weapon = weapons[selectedIndex];
+        var weapon = GameDataManager.Instance.ActiveSave.GetWeapon(weapons[selectedIndex]);
 
         Selected.Viewmodel     = Instantiate(weapon.gameObject, viewmodelHolder, false);
         Selected.Weapon        = Selected.Viewmodel.GetComponent<Weapon>();

@@ -32,7 +32,7 @@ public class PlayerHUD : Player.PlayerComponent
         canvas.enabled = false;
     }
 
-    private void Awake() {
+    private void Start() {
         UpdateUI();
     }
 

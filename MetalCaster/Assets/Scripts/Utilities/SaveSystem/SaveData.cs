@@ -34,6 +34,7 @@ public class SaveData : ScriptableObject
     public void UnlockModification(WeaponModification modification)
     {
         if (modifications.Contains(modification)) return;
+        if (modification == null) return;
         modifications.Add(modification);
         SaveAltered?.Invoke();
     }

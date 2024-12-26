@@ -6,6 +6,7 @@ public class ShotPayload {
     public int ricochetTotal;
     public bool firstShot;
     public HashSet<GameObject> hashSet;
+    public Vector3 prevHitPoint;
 }
 
 [System.Serializable]
@@ -15,9 +16,9 @@ public class Weapon : MonoBehaviour
     {
         public Vector3 pos;
         public Vector3 dir;
-        public ShotPayload payload;
+        public WeaponModificationData payload;
 
-        public System.Func<Vector3, Vector3, ShotPayload, ShotPayload> action;
+        public System.Func<Vector3, Vector3, WeaponModificationData, WeaponModificationData> action;
     }
 
     [Header("Modifications (Debugging)")]
@@ -35,8 +36,7 @@ public class Weapon : MonoBehaviour
     [SerializeField] private Transform menuHolder;
 
     public PlayerWeaponData WeaponData { get; set; }
-    public PlayerWeapon PlayerWeapon   { get; private set; }
-    public Vector3 StartPos            { get; private set; }
+    public PlayerWeapon PlayerWeapon { get; private set; }
 
     public Transform MuzzlePos       => muzzlePosition;
     public Transform MenuPos         => menuPos;
@@ -57,7 +57,6 @@ public class Weapon : MonoBehaviour
         {
             var data = bullets.Dequeue();
             data.payload = data.action.Invoke(data.pos, data.dir, data.payload);
-            data.payload.firstShot = false;
         }
     }
 
@@ -113,7 +112,6 @@ public class Weapon : MonoBehaviour
         }
 
         WeaponData.prevFireTime = Time.time;
-        StartPos                 = context.GetCamera().CameraTransform.position;
 
         context.GetCamera().Recoil(WeaponData.recoil);
         context.GetCamera().ViewmodelRecoil();
@@ -124,12 +122,9 @@ public class Weapon : MonoBehaviour
 
             if (WeaponData.shotCount < 0) break;
 
-            ShotPayload payload = new()
-            {
-                ricochetTotal = WeaponData.ricochetCount,
-                hashSet       = new(),
-                firstShot     = true
-            };
+            WeaponModificationData payload = new();
+            payload.Set(WeaponData.ricochetCount, "ricochet");
+            payload.Set(true, "firstShot");
 
             FireImmediate(context.GetCamera().CameraTransform.position, context.GetCamera().CameraForward, ref payload);
         }
@@ -142,46 +137,55 @@ public class Weapon : MonoBehaviour
         Vector3 pos = context.GetCamera().CameraTransform.position;
         Vector3 dir = context.GetCamera().CameraForward;
 
-        StartPos = pos;
-
         foreach (var mod in permanentModifications) mod.AltFire(this, dir);
         foreach (var mod in modifications)          mod.AltFire(this, dir);
     }
 
-    public void FireImmediate(Vector3 position, Vector3 direction, ref ShotPayload payload)
+    public void FireImmediate(Vector3 position, Vector3 direction, ref WeaponModificationData payload)
     {
         FireData data = new()
         {
             pos     = position,
             dir     = direction,
             payload = payload,
-            action  = (Vector3 actPos, Vector3 actDir, ShotPayload actPayload) =>
+            action  = (Vector3 actPos, Vector3 actDir, WeaponModificationData actPayload) =>
             {
                 foreach (var mod in permanentModifications) mod.OnFire(this);
                 foreach (var mod in modifications)          mod.OnFire(this);
 
-                if (WeaponData.type == PlayerWeaponData.ProjectileType.Raycast)
+                if (WeaponData.type != PlayerWeaponData.ProjectileType.Raycast)
                 {
-                    Vector3 deviatedDir = actDir + (Random.insideUnitSphere * WeaponData.shotDeviation);
-
-                    if (Physics.Raycast(actPos, deviatedDir, out RaycastHit hit, Mathf.Infinity, PlayerWeapon.CollisionLayers))
-                    {
-                        if (hit.collider.TryGetComponent(out Health hp) && !actPayload.hashSet.Contains(hit.collider.gameObject)) {
-                            hp.Damage(WeaponData.damage);
-                        }
-
-                        foreach (var mod in permanentModifications) mod.OnHit(this, hit, ref actPayload);
-                        foreach (var mod in modifications)          mod.OnHit(this, hit, ref actPayload);
-
-                        StartPos = hit.point;
-                    }
-                    else
-                    {
-                        foreach (var mod in permanentModifications) mod.OnMiss(this, deviatedDir, ref actPayload);
-                        foreach (var mod in modifications)          mod.OnMiss(this, deviatedDir, ref actPayload);
-                    }
+                    actPayload.Set(false, "firstShot");
+                    return actPayload;
                 }
 
+                Vector3 deviatedDir = actDir + (Random.insideUnitSphere * WeaponData.shotDeviation);
+
+                if (Physics.Raycast(actPos, deviatedDir, out RaycastHit hit, Mathf.Infinity, PlayerWeapon.CollisionLayers))
+                {
+                    if (hit.collider.TryGetComponent(out Health hp))
+                    {
+                        if (actPayload.Contains("hashSet"))
+                        {
+                            HashSet<Health> h = actPayload.Get<HashSet<Health>>("hashSet");
+                            if (!h.Contains(hp)) hp.Damage(WeaponData.damage);
+                        }
+                        else
+                        {
+                            hp.Damage(WeaponData.damage);
+                        }
+                    }
+
+                    foreach (var mod in permanentModifications) mod.OnHit(this, hit, ref actPayload);
+                    foreach (var mod in modifications)          mod.OnHit(this, hit, ref actPayload);
+                }
+                else
+                {
+                    foreach (var mod in permanentModifications) mod.OnMiss(this, deviatedDir, ref actPayload);
+                    foreach (var mod in modifications)          mod.OnMiss(this, deviatedDir, ref actPayload);
+                }
+
+                actPayload.Set(false, "firstShot");
                 return actPayload;
             }
         };
