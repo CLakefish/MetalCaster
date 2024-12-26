@@ -27736,6 +27736,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Managers
       objectReference: {fileID: 0}
+    - target: {fileID: 2095666183060306628, guid: ea50c8f496a812044980aeeb7cddc205, type: 3}
+      propertyPath: saveData
+      value: 
+      objectReference: {fileID: 11400000, guid: 0bcc5675f3ea4454285e1db6a30a33d3, type: 2}
     - target: {fileID: 7839373354639598020, guid: ea50c8f496a812044980aeeb7cddc205, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

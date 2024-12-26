@@ -21,4 +21,4 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 257
   lineRenderer: {fileID: 2583496891296808985, guid: 5b5e2db404edca3408af9941fc4bfbea, type: 3}
-  baseBounce: 3
+  baseBounce: 4
