@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: ThorGun
   m_EditorClassIdentifier: 
   damage: 1
-  magazineSize: 1000
-  shotDeviation: 1
+  magazineSize: 10000
+  shotDeviation: 0
   bulletsPerShot: 1
   type: 0
   modificationSlots: 4

@@ -652,7 +652,9 @@ public class PlayerController : Player.PlayerComponent
 
             // Ensuring if you are not trying to stick to a wall with a large difference in the angle, it wont attempt to! Specifically for corners
             // May cause a few things here and there, will need to stress test to confirm
-            if (Vector3.SignedAngle(projected, context.PlayerCamera.CameraForward, Vector3.up) <= context.wallRunAngleChangeMax) return;
+            float angle = Mathf.Abs(Vector3.SignedAngle(context.WallNormal, context.PlayerCamera.CameraForward, Vector3.up));
+
+            if (angle <= context.wallRunAngleChangeMax) return;
 
             projected *= Mathf.Max(context.wallRunSpeed, context.rb.linearVelocity.magnitude);
 
