@@ -278,8 +278,7 @@ public class PlayerController : Player.PlayerComponent
 
         ChangeSize(PlayerInput.Slide || !CanUncrouch ? crouchSize : standardSize);
 
-        if (PlayerInput.Mouse.Right.Pressed)
-        {
+        if (PlayerInput.Mouse.Right.Pressed) {
             PlayerHealth.Damage(10);
         }
     }
@@ -720,22 +719,6 @@ public class PlayerController : Player.PlayerComponent
         string current = $"Current Velocity: { rb.linearVelocity }\nCurrent Magnitude: { rb.linearVelocity.magnitude }";
         GUILayout.Label($"<size=15>{current}</size>");
         GUILayout.EndArea();
-    }
-
-    private void OnDrawGizmos() {
-        return;
-        Player Player = GetComponent<Player>();
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(Player.rb.transform.position + new Vector3(0, -groundCastDist * Size / 2, 0), groundCastRad);
-
-        Gizmos.color = Color.blue;
-        Gizmos.DrawWireSphere(Player.rb.transform.position + new Vector3(0, -fallingCastDist * Size / 2, 0), groundCastRad);
-
-        if (wallCastIncrements <= 0) return;
-
-        Gizmos.color = Color.green;
-        float P2 = Mathf.PI * 2 / wallCastIncrements;
-        for (float i = 0; i < wallCastIncrements; i++) Gizmos.DrawRay(Player.rb.position, new Vector3(Mathf.Cos(P2 * i), 0, Mathf.Sin(P2 * i)).normalized * wallCastDistance);
     }
 
     private class DebugFlyingState : State<PlayerController>

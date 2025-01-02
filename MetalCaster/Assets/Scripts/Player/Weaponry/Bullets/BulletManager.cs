@@ -40,15 +40,11 @@ public class BulletManager : PlayerWeapon.PlayerWeaponSystem
     }
 
     public void OnUpdate() {
-        HashSet<Bullet> bullets = new();
-
         int queueTotal = bulletQueue.Count;
 
         for (int i = 0; i < queueTotal; i++)
         {
             Bullet bullet = bulletQueue.Dequeue();
-            if (bullets.Contains(bullet)) continue;
-            bullets.Add(bullet);
             PlayerWeapon.ModificationManager.ApplyAllModifications(ref bullet);
         }
     }

@@ -5,13 +5,13 @@ public class LineRendering : Modification.AlwaysEmpty
 {
     [Header("Prefabs and Timings")]
     [SerializeField] private LineRenderer lineRenderer;
-    [SerializeField] private float time;
+    [SerializeField] private float destroyTime;
 
     private void InstantiateLine(Vector3 p0, Vector3 p1) {
         LineRenderer line = Instantiate(lineRenderer, Vector3.zero, Quaternion.identity);
         line.SetPosition(0, p0);
         line.SetPosition(1, p1);
-        Destroy(line.gameObject, time);
+        Destroy(line.gameObject, destroyTime);
     }
 
     public override void OnHit(ref RaycastHit hit, ref Bullet bullet) {

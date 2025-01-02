@@ -17,8 +17,7 @@ public class ChainLightning : Modification.Queue
     public override void OnHit(ref RaycastHit hit, ref Bullet bullet)
     {
         bullet.hitObjects = new() { hit.collider };
-        bullet.position   = hit.point;
-
+        if (!hit.collider.TryGetComponent(out Health _)) return;
         ProvideBullet(ref bullet);
     }
 

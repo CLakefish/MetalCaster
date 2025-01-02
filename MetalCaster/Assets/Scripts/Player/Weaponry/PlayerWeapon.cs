@@ -51,10 +51,6 @@ public class PlayerWeapon : Player.PlayerComponent
 
     private void Update()
     {
-        modificationManager.UpdateModifications();
-        bulletManager.OnUpdate();
-        modificationManager.CheckModificationRemoval();
-
         if (PlayerInput.SlotPressed) {
             int desiredIndex = 0;
 
@@ -81,6 +77,13 @@ public class PlayerWeapon : Player.PlayerComponent
         }
 
         Selected.Weapon.CheckReload();
+    }
+
+    private void FixedUpdate()
+    {
+        modificationManager.UpdateModifications();
+        bulletManager.OnUpdate();
+        modificationManager.CheckModificationRemoval();
     }
 
     #region Weapons

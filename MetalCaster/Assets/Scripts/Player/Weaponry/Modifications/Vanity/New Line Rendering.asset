@@ -16,4 +16,4 @@ MonoBehaviour:
   description: Makes a bullet tracer for every shot fired
   modificationSprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
   lineRenderer: {fileID: 2583496891296808985, guid: 5b5e2db404edca3408af9941fc4bfbea, type: 3}
-  time: 0.5
+  destroyTime: 0.5

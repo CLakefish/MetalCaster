@@ -7,6 +7,10 @@ public class Ricochet : Modification.Queue
     [SerializeField] private int ricochetAddition;
     [SerializeField] private LayerMask ricochetLayers;
 
+    [Header("Display")]
+    [SerializeField] private LineRenderer lineRenderer;
+    [SerializeField] private float destroyTime;
+
     public override void Modify(Weapon context) {
         context.WeaponData.ricochetCount += ricochetAddition;
         activeBullets = 0;
@@ -36,17 +40,29 @@ public class Ricochet : Modification.Queue
 
             if (Physics.Raycast(bullet.position, reflected, out RaycastHit hit, Mathf.Infinity, ricochetLayers))
             {
+                InstantiateLine(bullet.position, hit.point);
+                bullet.normal = hit.normal;
+
                 if (hit.collider.TryGetComponent(out Health hp)) hp.Damage(bullet.damage);
 
                 bullet.ricochetCount--;
 
                 activeBullets--;
 
-                Player.PlayerWeapon.BulletManager.QueueBullet((hit.point - bullet.position).normalized, hit.point, ref bullet);
+                Player.PlayerWeapon.BulletManager.QueueBullet(hit.point, (hit.point - bullet.position).normalized, ref bullet);
                 continue;
             }
 
             activeBullets--;
+            if (reflected != Vector3.zero) InstantiateLine(bullet.position, reflected * 1000);
         }
+    }
+
+    private void InstantiateLine(Vector3 p0, Vector3 p1)
+    {
+        LineRenderer line = Instantiate(lineRenderer, Vector3.zero, Quaternion.identity);
+        line.SetPosition(0, p0);
+        line.SetPosition(1, p1);
+        Destroy(line.gameObject, destroyTime);
     }
 }

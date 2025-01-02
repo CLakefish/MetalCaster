@@ -15,8 +15,8 @@ MonoBehaviour:
   modificationName: Chain Lightning
   description: Chain Lightning
   modificationSprite: {fileID: 21300000, guid: 58fac26cd11db6f4ab59df9548a3404e, type: 3}
-  ricochetAddition: 100
-  colliderRadius: 15
+  ricochetAddition: 2
+  colliderRadius: 10
   collidableLayer:
     serializedVersion: 2
     m_Bits: 256
