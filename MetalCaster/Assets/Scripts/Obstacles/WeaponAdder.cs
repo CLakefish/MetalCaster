@@ -7,13 +7,11 @@ public class WeaponAdder : MonoBehaviour
 
     private void OnTriggerStay(Collider other)
     {
-        if (!other.transform.parent.TryGetComponent<PlayerWeapon>(out PlayerWeapon p)) return;
-
         if (remove) {
-            Debug.Log("Removed: " + p.RemoveWeapon(weapon));
+            Debug.Log("Removed: " + Player.Instance.PlayerWeapon.RemoveWeapon(weapon));
         }
         else {
-            p.AddWeapon(weapon, true);
+            Player.Instance.PlayerWeapon.AddWeapon(weapon, true);
         }
 
         //Destroy(gameObject);

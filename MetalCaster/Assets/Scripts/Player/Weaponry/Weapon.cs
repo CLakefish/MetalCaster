@@ -5,23 +5,9 @@ using UnityEngine;
 [System.Serializable]
 public class Weapon : MonoBehaviour
 {
-    public class FireData
-    {
-        public Vector3 position;
-        public Vector3 direction;
-
-        public PlayerWeaponData weaponData;
-        public Weapon context;
-
-        public WeaponModification[] permanentMods;
-        public WeaponModification[] mods;
-
-        public WeaponModificationData payload;
-    }
-
     [Header("Modifications (Debugging)")]
-    [SerializeField] public List<WeaponModification> modifications;
-    [SerializeField] public List<WeaponModification> permanentModifications;
+    [SerializeField] public List<Modification> modifications;
+    [SerializeField] public List<Modification> permanentModifications;
 
     [Header("Data")]
     [SerializeField] private PlayerWeaponData baseData;
@@ -34,183 +20,145 @@ public class Weapon : MonoBehaviour
     [SerializeField] private Transform menuHolder;
 
     public PlayerWeaponData WeaponData { get; set; }
-    public PlayerWeapon PlayerWeapon { get; private set; }
+    public Player Player               { get; private set; }
 
     public Transform MuzzlePos       => muzzlePosition;
     public Transform MenuPos         => menuPos;
     public Transform ModificationPos => modificationPos;
     public Transform MenuHolder      => menuHolder;
+    public string WeaponName         => weaponName;
 
-    public string WeaponName => weaponName;
+    public event System.Action OnFire;
+    public event System.Action OnAltFire;
+    public event System.Action OnReloadStart;
+    public event System.Action OnReloadEnd;
 
-    private readonly Queue<FireData> bullets = new();
-    private Coroutine reloadCoroutine        = null;
-    private bool reloading                   = false;
+    private readonly List<Modification> mods = new();
+    private Coroutine reloadCoroutine = null;
+    private bool reloading  = false;
 
-    public void OnEnable() => ReloadModifications();
-
-    private void Update()
-    {
-        while (bullets.Count > 0)
-        {
-            var data = bullets.Dequeue();
-
-            foreach (var mod in data.permanentMods) mod.OnFire(ref data);
-            foreach (var mod in data.mods)          mod.OnFire(ref data);
-
-            if (data.weaponData.type != PlayerWeaponData.ProjectileType.Raycast) continue;
-
-            if (Physics.Raycast(data.position, data.direction, out RaycastHit hit, Mathf.Infinity, PlayerWeapon.CollisionLayers))
-            {
-                if (hit.collider.TryGetComponent(out Health health))
-                {
-                    if (!data.payload.Contains("hashSet")) health.Damage(data.weaponData.damage);
-                }
-
-
-                foreach (var mod in data.permanentMods) mod.OnHit(hit, ref data);
-                foreach (var mod in data.mods)          mod.OnHit(hit, ref data);
-            }
-            else
-            {
-                foreach (var mod in data.permanentMods) mod.OnMiss(ref data);
-                foreach (var mod in data.mods)          mod.OnMiss(ref data);
-            }
-
-            data.payload.Set(false, "firstShot");
-        }
-    }
-
-    public void Equip(PlayerWeapon context) 
-    {
-        PlayerWeapon = context;
+    public void Equip(Player player) { 
+        Player = player;
+        ReloadData();
     }
 
     public void UnEquip() {
-        bullets.Clear();
+        GameDataManager.Instance.ActiveSave.SaveWeapon(this);
         Destroy(gameObject);
     }
 
-    public void AddModification(WeaponModification data)
-    {
+    public void AddModification(Modification data) {
         if (modifications.Count >= WeaponData.modificationSlots) return;
 
         modifications.Add(data);
-        ReloadModifications();
+        ReloadData();
+
+        GameDataManager.Instance.ActiveSave.SaveWeapon(this);
 
         WeaponData.shotCount = WeaponData.magazineSize;
     }
 
-    public void RemoveModification(WeaponModification data)
-    {
+    public void RemoveModification(Modification data) {
         if (!modifications.Contains(data)) return;
 
         modifications.Remove(data);
-        ReloadModifications();
+        ReloadData();
+
+        GameDataManager.Instance.ActiveSave.SaveWeapon(this);
 
         WeaponData.shotCount = WeaponData.magazineSize;
     }
 
-    private void ReloadModifications()
+    private void ReloadData()
     {
         if (WeaponData != null) Destroy(WeaponData);
 
         WeaponData = ScriptableObject.CreateInstance<PlayerWeaponData>();
         WeaponData.Set(baseData);
 
-        foreach (var mod in permanentModifications) mod.Modify(this);
-        foreach (var mod in modifications)          mod.Modify(this);
+        mods.Clear();
+        mods.AddRange(modifications);
+        mods.AddRange(permanentModifications);
+
+        foreach (var mod in mods) mod.Modify(this);
+
+        Player.PlayerWeapon.ModificationManager.AddModifications(mods);
     }
 
-    public void Fire(PlayerWeapon context)
+    public void Fire()
     {
         if (Time.time < WeaponData.fireTime + WeaponData.prevFireTime || WeaponData.shotCount <= 0) return;
 
-        if (reloading)
-        {
+        if (reloading) {
             if (WeaponData.shotCount <= 0) return;
-            else StopReload();
+            else StopCoroutine(reloadCoroutine);
         }
 
         WeaponData.prevFireTime = Time.time;
 
-        context.GetCamera().Recoil(WeaponData.recoil);
-        context.GetCamera().ViewmodelRecoil();
+        OnFire?.Invoke();
+
+        Player.PlayerCamera.Recoil(WeaponData.recoil);
+        Player.PlayerCamera.ViewmodelRecoil();
 
         for (int i = 0; i < WeaponData.bulletsPerShot; ++i)
         {
             WeaponData.shotCount--;
 
-            if (WeaponData.shotCount < 0) break;
+            if (WeaponData.shotCount < 0)
+            {
+                Reload();
+                return;
+            }
 
-            WeaponModificationData payload = new();
-            payload.Set(WeaponData.ricochetCount, "ricochet");
-            payload.Set(true, "firstShot");
+            Vector3 pos = Player.PlayerCamera.CameraTransform.position;
+            Vector3 dir = Player.PlayerCamera.CameraForward.normalized;
 
-            FireImmediate(context.GetCamera().CameraTransform.position, context.GetCamera().CameraForward, ref payload);
+            Bullet bullet    = Player.PlayerWeapon.BulletManager.AddBullet(WeaponData, mods);
+            bullet.position  = pos;
+            bullet.direction = dir;
+
+            if (Physics.Raycast(pos, dir, out RaycastHit hit, Mathf.Infinity, Player.hittableLayer)) {
+                if (hit.collider.TryGetComponent(out Health hp)) hp.Damage(WeaponData.damage);
+
+                foreach (var mod in mods) mod.OnHit(ref hit, ref bullet);
+            }
+            else {
+                foreach (var mod in mods) mod.OnMiss(pos, dir);
+            }
         }
-
-        PlayerWeapon.Fire?.Invoke();
     }
 
-    public void AltFire(PlayerWeapon context)
+    public void AltFire()
     {
-        Vector3 dir = context.GetCamera().CameraForward;
+        OnAltFire?.Invoke();
 
-        foreach (var mod in permanentModifications) mod.AltFire(dir);
-        foreach (var mod in modifications)          mod.AltFire(dir);
+        foreach (var mod in mods) mod.AltFire();
     }
 
-    public void FireImmediate(Vector3 position, Vector3 direction, ref WeaponModificationData payload)
-    {
-        var bulletData = new FireData()
-        {
-            position      = position,
-            direction     = direction + (Random.insideUnitSphere * WeaponData.shotDeviation),
-            weaponData    = WeaponData,
-            permanentMods = permanentModifications.ToArray(),
-            mods          = modifications.ToArray(),
-            payload       = payload,
-            context       = this,
-        };
-
-        bullets.Enqueue(bulletData);
-    }
-
-    public void UpdateWeapon()
-    {
-        foreach (var mod in permanentModifications) mod.OnUpdate();
-        foreach (var mod in modifications)          mod.OnUpdate();
-
+    public void CheckReload() {
         if (WeaponData.shotCount <= 0) Reload();
     }
 
-    private void Reload()
-    {
+    private void Reload() {
         if (reloading) return;
 
-        reloading = true;
-        StopReload();
-        reloadCoroutine = StartCoroutine(ReloadCoroutine());
-    }
-
-    private void StopReload()
-    {
         if (reloadCoroutine != null) StopCoroutine(reloadCoroutine);
+
+        reloading       = true;
+        reloadCoroutine = StartCoroutine(ReloadCoroutine());
     }
 
     private IEnumerator ReloadCoroutine()
     {
-        foreach (var mod in permanentModifications) mod.OnReload();
-        foreach (var mod in modifications)          mod.OnReload();
+        OnReloadStart?.Invoke();
 
-        PlayerWeapon.ReloadStart?.Invoke();
+        foreach (var mod in mods) mod.OnReload();
 
         yield return new WaitForSeconds(WeaponData.reloadTime);
 
         WeaponData.shotCount = WeaponData.magazineSize;
-
-        reloading = false;
-        PlayerWeapon.ReloadFinished?.Invoke();
+        reloading            = false;
+        OnReloadEnd?.Invoke();
     }
 }

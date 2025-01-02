@@ -9,19 +9,19 @@ public class ModificationDraggable : Draggable, IPointerEnterHandler, IPointerEx
     [SerializeField] private float scaleSize;
     [SerializeField] private float scaleSpeed;
 
-    private WeaponModification modification;
+    private Modification modification;
     private Coroutine scale;
 
     private const float EPSILON = 0.01f;
 
     public System.Action onDrop;
 
-    public void SetReferences(WeaponModification modification) => this.modification = modification;
+    public void SetReferences(Modification modification) => this.modification = modification;
 
     public override void OnBeginDrag(PointerEventData eventData)
     {
         if (transform.parent.TryGetComponent(out ModificationSlot slot)) {
-            slot.Menu.PlayerWeapon.Weapon.RemoveModification(modification);
+            slot.Menu.PlayerWeapon.Selected.Weapon.RemoveModification(modification);
             onDrop?.Invoke();
         }
 
@@ -33,7 +33,7 @@ public class ModificationDraggable : Draggable, IPointerEnterHandler, IPointerEx
         base.OnEndDrag(eventData);
 
         if (transform.parent.TryGetComponent(out ModificationSlot slot)) {
-            slot.Menu.PlayerWeapon.Weapon.AddModification(modification);
+            slot.Menu.PlayerWeapon.Selected.Weapon.AddModification(modification);
             onDrop?.Invoke();
         }
     }

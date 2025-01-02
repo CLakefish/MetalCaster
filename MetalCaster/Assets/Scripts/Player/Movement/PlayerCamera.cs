@@ -109,7 +109,7 @@ public class PlayerCamera : Player.PlayerComponent
         intensity = Mathf.Clamp(intensity / jumpBobReduction, 1.0f, jumpBobMaxIntensity);
 
         jumpBob.Coroutine = StartCoroutine(jumpBob.Run(() => { 
-            cam.transform.position = (intensity * jumpBob.Continue(Time.deltaTime) * Vector3.up) + PlayerMovement.rb.transform.position + (Vector3.up * standingHeight);
+            cam.transform.position = (intensity * jumpBob.Continue(Time.deltaTime) * Vector3.up) + rb.transform.position + (Vector3.up * standingHeight);
         }));
     }
 

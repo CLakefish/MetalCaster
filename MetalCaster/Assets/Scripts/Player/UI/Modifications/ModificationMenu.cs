@@ -15,29 +15,28 @@ public class ModificationMenu : SubMenu
     [SerializeField] private GameObject modificationSelectedPrefab;
     [SerializeField] private GameObject modificationSlotPrefab;
 
-    public PlayerWeapon PlayerWeapon
-    {
+    public PlayerWeapon PlayerWeapon {
         get {
-            return context.GetWeapon();
-        }
+            return Player.PlayerWeapon;
+        }   
     }
 
-    private readonly List<WeaponModification> equippedMods = new();
-    private readonly List<WeaponModification> unequippedMods = new();
-    private readonly List<GameObject> slots = new();
-    private readonly List<GameObject> selectables = new();
+    private readonly List<Modification> equippedMods   = new();
+    private readonly List<Modification> unequippedMods = new();
+    private readonly List<GameObject>         slots          = new();
+    private readonly List<GameObject>         selectables    = new();
 
     public override void OnOpen()
     {
         modificationCanvas.enabled = true;
-        context.MoveMenuCamera(context.GetCamera().Camera.transform.InverseTransformPoint(context.GetWeapon().Weapon.ModificationPos.position), true);
+        context.MoveMenuCamera(Player.PlayerCamera.Camera.transform.InverseTransformPoint(PlayerWeapon.Selected.Weapon.ModificationPos.position), true);
         DisplayWeaponSlots();
     }
 
     public override void OnClose()
     {
         modificationCanvas.enabled = false;
-        context.MoveMenuCamera(context.GetCamera().Camera.transform.InverseTransformPoint(context.GetWeapon().Weapon.MenuPos.position), true);
+        context.MoveMenuCamera(Player.PlayerCamera.Camera.transform.InverseTransformPoint(PlayerWeapon.Selected.Weapon.MenuPos.position), true);
         TooltipManager.Instance.HidePopup();
         ClearAll();
     }
@@ -46,7 +45,7 @@ public class ModificationMenu : SubMenu
     {
         ClearAll();
 
-        Weapon weapon = context.GetWeapon().Weapon;
+        Weapon weapon = PlayerWeapon.Selected.Weapon;
 
         equippedMods.AddRange(weapon.modifications);
         unequippedMods.AddRange(GameDataManager.Instance.ActiveSave.Modifications.Except(equippedMods));
@@ -68,7 +67,7 @@ public class ModificationMenu : SubMenu
             selectables.Add(temp);
         }
 
-        List<WeaponModification> mods = GameDataManager.Instance.ActiveSave.Modifications;
+        List<Modification> mods = GameDataManager.Instance.ActiveSave.Modifications;
 
         for (int i = 0; i < mods.Count; ++i)
         {
@@ -83,7 +82,7 @@ public class ModificationMenu : SubMenu
         }
     }
 
-    private GameObject CreateModificationDraggable(Transform parent, WeaponModification mod, Weapon weapon)
+    private GameObject CreateModificationDraggable(Transform parent, Modification mod, Weapon weapon)
     {
         GameObject item = Instantiate(modificationItem, parent);
         var draggable = item.GetComponent<ModificationDraggable>();

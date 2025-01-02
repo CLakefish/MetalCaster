@@ -9,16 +9,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 950812c2bdad08d439d70ee4f940e691, type: 3}
-  m_Name: New Chain Lightning
+  m_Script: {fileID: 11500000, guid: e8ae1e64b98a7a54d97f1d64c92f43f7, type: 3}
+  m_Name: New Ricochet
   m_EditorClassIdentifier: 
-  modificationName: Chain Lightning
-  description: On hitting an enemy a surge of electricity spawns, hitting up to 3
-    enemies around the hit enemy.
+  modificationName: Ricochet
+  description: Ricochet
   modificationSprite: {fileID: -1680063720633091170, guid: bc7faa27e9210c941a2be9c25b2fc707, type: 3}
-  radius: 10
-  hittable:
+  ricochetAddition: 2
+  ricochetLayers:
     serializedVersion: 2
     m_Bits: 257
-  lineRenderer: {fileID: 2583496891296808985, guid: 5b5e2db404edca3408af9941fc4bfbea, type: 3}
-  baseBounce: 4

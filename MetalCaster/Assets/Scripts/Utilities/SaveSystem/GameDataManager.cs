@@ -40,17 +40,13 @@ public class GameDataManager : MonoBehaviour
     }
 
     private void OnEnable() {
-        ActiveSave.SaveAltered += Write;
-    }
+        if (Instance == null) Instance = this;
 
-    private void OnApplicationQuit() {
-        ActiveSave.ResetWeapons();
+        ActiveSave.SaveAltered += Write;
     }
 
     private void Awake() 
     {
-        if (Instance == null) Instance = this;
-
         saveFolderName = Path.Combine(Application.persistentDataPath, "MetalCaster Data");
 
         if (!Directory.Exists(saveFolderName)) {

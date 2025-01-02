@@ -8,14 +8,16 @@ public class SubMenu : MonoBehaviour {
     [SerializeField] private string menuName;
 
     protected PauseMenu context;
+    protected Player Player;
 
     public string MenuName => menuName;
 
     public event System.Action Opened;
     public event System.Action Closed;
 
-    public void Initialize(PauseMenu context) { 
+    public void Initialize(PauseMenu context, Player player) { 
         this.context = context;
+        this.Player = player;
     }
 
     public virtual void OnOpen() {
@@ -90,7 +92,7 @@ public class PauseMenu : Player.PlayerComponent
         PlayerWeapon.enabled   = false;
         PlayerHUD.enabled      = false;
 
-        Vector3 pos = PlayerCamera.Camera.transform.InverseTransformPoint(PlayerWeapon.Weapon.MenuPos.position);
+        Vector3 pos = PlayerCamera.Camera.transform.InverseTransformPoint(PlayerWeapon.Selected.Weapon.MenuPos.position);
         MoveMenuCamera(pos, true, 
             () => {
                 menuCamera.fieldOfView = PlayerCamera.Camera.fieldOfView;
@@ -151,8 +153,8 @@ public class PauseMenu : Player.PlayerComponent
             button.GetComponentInChildren<TMPro.TMP_Text>().text = text;
         }
 
-        worldCanvas     = Instantiate(worldspaceCanvas, PlayerWeapon.Weapon.MenuHolder);
-        Vector3 dir     = PlayerWeapon.Weapon.MenuPos.right;
+        worldCanvas     = Instantiate(worldspaceCanvas, PlayerWeapon.Selected.Weapon.MenuHolder);
+        Vector3 dir     = PlayerWeapon.Selected.Weapon.MenuPos.right;
         Vector3 up      = PlayerCamera.CameraTransform.up;
         Quaternion look = Quaternion.LookRotation(dir, up);
 
@@ -164,7 +166,7 @@ public class PauseMenu : Player.PlayerComponent
 
         foreach (var subMenu in subMenus)
         {
-            subMenu.Initialize(this);
+            subMenu.Initialize(this, Player);
             CreateButton(subMenu.MenuName, () => { ChangeSubMenu(subMenu); });
         }
 
@@ -200,7 +202,7 @@ public class PauseMenu : Player.PlayerComponent
             menuCamera.transform.localPosition = Vector3.SmoothDamp(menuCamera.transform.localPosition, pos, ref vel, menuSmoothTime, Mathf.Infinity, Time.unscaledDeltaTime);
 
             if (enabled) {
-                Vector3 dir     = PlayerWeapon.Weapon.MenuPos.right;
+                Vector3 dir     = PlayerWeapon.Selected.Weapon.MenuPos.right;
                 Vector3 up      = PlayerCamera.CameraTransform.up;
                 Quaternion look = Quaternion.LookRotation(dir, up);
                 menuCamera.transform.rotation = Quaternion.RotateTowards(menuCamera.transform.rotation, look, Time.unscaledDeltaTime * rotateReturnSpeed);

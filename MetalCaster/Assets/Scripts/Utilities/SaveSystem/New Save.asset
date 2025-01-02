@@ -13,25 +13,7 @@ MonoBehaviour:
   m_Name: New Save
   m_EditorClassIdentifier: 
   saveName: New Save.json
-  saveTime: 530.87
+  saveTime: 0
   modifications: []
-  equippedWeapons:
-  - weaponName: 1
-    modificationNames:
-    - Material Swap
-    - Ricochet
-    permanentModificationNames:
-    - Line Rendering
-  - weaponName: 2
-    modificationNames: []
-    permanentModificationNames:
-    - Line Rendering
-  weapons:
-  - weaponName: 1
-    modificationNames: []
-    permanentModificationNames:
-    - Line Rendering
-  - weaponName: 2
-    modificationNames: []
-    permanentModificationNames:
-    - Line Rendering
+  equippedWeapons: []
+  unlockedWeapons: []

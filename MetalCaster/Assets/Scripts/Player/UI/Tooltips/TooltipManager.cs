@@ -34,7 +34,7 @@ public class TooltipManager : MonoBehaviour
         }
     }
 
-    public void DisplayPopup(WeaponModification mod)
+    public void DisplayPopup(Modification mod)
     {
         popup.Set(mod.ModificationName, mod.Description);
         popup.gameObject.SetActive(true);

@@ -18,74 +18,56 @@ public class PlayerHUD : Player.PlayerComponent
     [Header("Ammo")]
     [SerializeField] private TMP_Text ammoCount;
 
-    private readonly Dictionary<Weapon, RectTransform> equippedWeaponHUD = new();
+    private readonly Dictionary<string, RectTransform> equippedWeaponHUD = new();
     private Weapon selectedWeapon;
 
 
-    private void OnEnable()
-    {
+    private void OnEnable() {
         canvas.enabled = true;
     }
 
-    private void OnDisable()
+    public void Update()
     {
-        canvas.enabled = false;
-    }
-
-    private void Start() {
-        UpdateUI();
-    }
-
-    public void UpdateUI()
-    {
-        PlayerWeapon.Fire += SetAmmoCount;
-        PlayerWeapon.ReloadStart += () => ammoCount.text = "RELOADING";
-        PlayerWeapon.ReloadFinished += SetAmmoCount;
-
-        PlayerWeapon.Added += (Weapon weapon) =>
-        {
-            RectTransform rect = Instantiate(weaponHUDPrefab, weaponHUDHolder);
-            equippedWeaponHUD.Add(weapon, rect);
-            CheckSelected(weapon);
-        };
-
-        PlayerWeapon.Removed += (Weapon weapon) =>
-        {
-            if (equippedWeaponHUD.ContainsKey(weapon))
-            {
-                Destroy(equippedWeaponHUD[weapon].gameObject);
-                equippedWeaponHUD.Remove(weapon);
-            }
-        };
-
-        PlayerWeapon.Swap += (Weapon weapon) =>
-        {
-            SetAmmoCount();
-            CheckSelected(weapon);
-        };
+        SetAmmoCount();
     }
 
     private void SetAmmoCount()
     {
-        if (PlayerWeapon.Weapon == null)
+        if (PlayerWeapon.Selected.Weapon == null)
         {
             ammoCount.text = "...";
             return;
         }
 
-        ammoCount.text = PlayerWeapon.Weapon.WeaponData.shotCount.ToString();
+        ammoCount.text = PlayerWeapon.Selected.Weapon.WeaponData.shotCount.ToString();
     }
 
-    private void CheckSelected(Weapon weapon)
+    public void AddWeapon(Weapon weapon)
     {
-        if (!equippedWeaponHUD.TryGetValue(weapon, out RectTransform rect)) return;
+        if (equippedWeaponHUD.ContainsKey(weapon.WeaponName)) return;
 
-        if (selectedWeapon != null && equippedWeaponHUD.TryGetValue(selectedWeapon, out RectTransform prevRect))
-        {
+        RectTransform rect = Instantiate(weaponHUDPrefab, weaponHUDHolder);
+        equippedWeaponHUD.Add(weapon.WeaponName, rect);
+    }
+
+    public void SelectWeapon(Weapon weapon)
+    {
+        if (!equippedWeaponHUD.TryGetValue(weapon.WeaponName, out RectTransform rect)) return;
+
+        if (selectedWeapon != null && equippedWeaponHUD.TryGetValue(selectedWeapon.WeaponName, out RectTransform prevRect)) {
             prevRect.GetComponent<RawImage>().color = deselectedColor;
         }
 
         selectedWeapon = weapon;
         rect.GetComponent<RawImage>().color = selectedColor;
+    }
+
+    public void RemoveWeapon(Weapon weapon)
+    {
+        if (equippedWeaponHUD.ContainsKey(weapon.WeaponName))
+        {
+            Destroy(equippedWeaponHUD[weapon.WeaponName].gameObject);
+            equippedWeaponHUD.Remove(weapon.WeaponName);
+        }
     }
 }

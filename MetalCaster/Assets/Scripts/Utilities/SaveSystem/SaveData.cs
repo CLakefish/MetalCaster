@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 [System.Serializable]
@@ -7,6 +8,13 @@ public class WeaponSaveData
     [SerializeField] public string weaponName;
     [SerializeField] public List<string> modificationNames;
     [SerializeField] public List<string> permanentModificationNames;
+
+    public bool Equals(WeaponSaveData other)
+    {
+        if (other == null) return false;
+
+        return weaponName.Equals(other.weaponName);
+    }
 }
 
 [CreateAssetMenu(menuName = "Data/Save Data")]
@@ -16,183 +24,201 @@ public class SaveData : ScriptableObject
     [SerializeField] private string saveName;
     [SerializeField] private float  saveTime;
     [Header("Unlocks")]
-    [SerializeField] private List<WeaponModification> modifications = new();
-    [SerializeField] private List<WeaponSaveData>   equippedWeapons = new();
-    [SerializeField] private List<WeaponSaveData>   weapons         = new();
+    [SerializeField] private List<string>             modifications   = new();
+    [SerializeField] private List<WeaponSaveData>     equippedWeapons = new();
+    [SerializeField] private List<WeaponSaveData>     unlockedWeapons = new();
 
-    public string SaveName => saveName;
-    public float  SaveTime => saveTime;
+    public event System.Action SaveAltered;
 
     public List<WeaponSaveData>     EquippedWeapons => equippedWeapons;
-    public List<WeaponModification> Modifications   => modifications;
+    public List<WeaponSaveData>     UnlockedWeapons => unlockedWeapons;
+    public List<Modification> Modifications
+    {
+        get
+        {
+            List<Modification> mods = new List<Modification>();
+            foreach (var mod in modifications)
+            {
+                mods.Add(ContentManager.Instance.GetModificationByName(mod));
+            }
 
-    public System.Action SaveAltered;
+            return mods;
+        }
+    }
 
-    public void SetSaveName(string name) => saveName = name;
+
+    #region Statistic Management
+    public string SaveName => saveName;
+    public float SaveTime  => saveTime;
+
+    public void SetSaveName(string name)  => saveName = name;
     public void IncrementTime(float time) => saveTime += time;
 
-    public void UnlockModification(WeaponModification modification)
+    #endregion
+
+    #region Unlocks
+
+    /// <summary>
+    /// Adds modification to list of unlocked modification
+    /// </summary>
+    /// <param name="modification"></param>
+    public void UnlockModification(Modification modification)
     {
-        if (modifications.Contains(modification)) return;
         if (modification == null) return;
-        modifications.Add(modification);
+        if (modifications.Contains(modification.ModificationName)) return;
+
+        modifications.Add(modification.ModificationName);
         SaveAltered?.Invoke();
     }
 
+    /// <summary>
+    /// Add a weapon to the list of unlocked weapons
+    /// By default will not equip it!
+    /// </summary>
+    /// <param name="desiredWeapon"></param>
     public void UnlockWeapon(Weapon desiredWeapon) 
     {
+        if (desiredWeapon == null)
+        {
+            Debug.LogWarning("Weapon to unlock is null!");
+            return;
+        }
+
+        if (unlockedWeapons.Any(w => w.weaponName == desiredWeapon.WeaponName)) return;
+
         WeaponSaveData data = new()
         {
-            weaponName = desiredWeapon.WeaponName,
-            modificationNames = desiredWeapon.modifications.ConvertAll(mod => mod.ModificationName),
+            weaponName                 = desiredWeapon.WeaponName,
+            modificationNames          = desiredWeapon.modifications.ConvertAll(mod => mod.ModificationName),
             permanentModificationNames = desiredWeapon.permanentModifications.ConvertAll(mod => mod.ModificationName),
         };
 
-        foreach (var weapon in weapons)
-        {
-            if (weapon.weaponName == data.weaponName)
-            {
-                if (equippedWeapons.Contains(weapon)) return;
+        unlockedWeapons.Add(data);
+        SaveAltered?.Invoke();
+    }
 
-                equippedWeapons.Add(weapon);
-                SaveAltered?.Invoke();
-                return;
-            }
+    #endregion
+
+    #region Weapon Equipping
+
+    public bool EquipWeapon(Weapon desiredWeapon)
+    {
+        if (desiredWeapon == null)
+        {
+            Debug.LogWarning("Weapon to equip is null!");
+            return false;
         }
 
+        var data = unlockedWeapons.Find(w => w.weaponName == desiredWeapon.WeaponName);
+        if (data == null)
+        {
+            Debug.LogWarning("Weapon is not unlocked lmao.");
+            return false;
+        }
+
+        if (equippedWeapons.Any(w => w.weaponName == desiredWeapon.WeaponName)) return false;
+
         equippedWeapons.Add(data);
-        weapons.Add(data);
+        SaveAltered?.Invoke();
+        return true;
+    }
+
+    public void UnEquipWeapon(Weapon desiredWeapon)
+    {
+        if (desiredWeapon == null)
+        {
+            Debug.LogWarning("Weapon to unequip is null!");
+            return;
+        }
+
+        var data = equippedWeapons.Find(w => w.weaponName == desiredWeapon.WeaponName);
+        if (data == null)
+        {
+            Debug.LogWarning("Weapon is not equipped somehow lmao.");
+            return;
+        }
+
+        equippedWeapons.Remove(data);
+        SaveAltered?.Invoke();
+    }
+
+    #endregion
+
+
+    public void SaveWeapon(Weapon desiredWeapon)
+    {
+        if (desiredWeapon == null) return;
+
+        var unlockData = unlockedWeapons.Find(w => w.weaponName == desiredWeapon.WeaponName);
+        var equipData  = equippedWeapons.Find(w => w.weaponName == desiredWeapon.WeaponName);
+
+        if (unlockData == null || equipData == null)
+        {
+            Debug.LogWarning("Weapon is not unlocked lmao.");
+            return;
+        }
+
+        var mods     = desiredWeapon.modifications.ConvertAll         (w => w.ModificationName);
+        var permMods = desiredWeapon.permanentModifications.ConvertAll(w => w.ModificationName);
+
+        unlockData.modificationNames = mods;
+        equipData.modificationNames  = mods;
+        unlockData.permanentModificationNames = permMods;
+        equipData.permanentModificationNames  = permMods;
 
         SaveAltered?.Invoke();
     }
 
-    public void RemoveWeapon(Weapon desiredWeapon)
-    {
-        if (equippedWeapons == null) return;
-
-        for (int i = 0; i < equippedWeapons.Count; i++)
-        {
-            var weapon = equippedWeapons[i];
-
-            if (weapon.weaponName == desiredWeapon.WeaponName)
-            {
-                weapon.modificationNames.Clear();
-                equippedWeapons.Remove(weapon);
-                SaveAltered?.Invoke();
-                return;
-            }
-        }
-    }
-
-    public void SaveWeapon(Weapon desiredWeapon)
-    {
-        if (equippedWeapons == null) {
-            equippedWeapons = new();
-        }
-
-        if (weapons == null) {
-            weapons = new();
-        }
-
-        for (int i = 0; i < equippedWeapons.Count; i++)
-        {
-            WeaponSaveData entry = equippedWeapons[i];
-
-            if (entry.weaponName == desiredWeapon.WeaponName)
-            {
-                entry.modificationNames          = desiredWeapon.modifications.ConvertAll(mod => mod.ModificationName);
-                entry.permanentModificationNames = desiredWeapon.permanentModifications.ConvertAll(mod => mod.ModificationName);
-
-                SaveAltered?.Invoke();
-                return;
-            }
-        }
-
-        Debug.LogError("Unable to save weapon " + desiredWeapon.WeaponName + "! It either is not unlocked, or it is null!");
-    }
-
-
-    public List<Weapon> GetWeapons()
+    public List<Weapon> GetEquippedWeapons()
     {
         List<Weapon> weapons = new();
 
-        foreach (var entry in EquippedWeapons)
+        foreach (var weapon in equippedWeapons)
         {
-            Weapon data = ContentManager.Instance.GetWeaponDataByName(entry.weaponName);
-            weapons.Add(GetWeapon(data));
+            Weapon instantiated = InstantiateWeapon(weapon);
+            if (instantiated != null) weapons.Add(instantiated);
         }
 
         return weapons;
     }
 
-    public Weapon GetWeapon(Weapon weapon)
+    public Weapon ReloadWeaponData(Weapon data)
     {
-        WeaponSaveData temp = null;
-
-        foreach (var entry in EquippedWeapons)
-        {
-            if (entry.weaponName == weapon.WeaponName)
-            {
-                temp = entry;
-                break;
-            }
-        }
-
-        if (temp == null)
-        {
-            Debug.LogError("Weapon not found in save! File: " + weapon.WeaponName);
-            return null;
-        }
-
-        Weapon data = ContentManager.Instance.GetWeaponDataByName(temp.weaponName);
-
-        if (data == null)
-        {
-            Debug.LogError("Weapon with ID: " + weapon.WeaponName + " not found!");
-            return null;
-        }
-
-        data.modifications.Clear();
-        data.permanentModifications.Clear();
-
-        foreach (string mod in temp.modificationNames)
-        {
-            var modRef = ContentManager.Instance.GetModificationByName(mod);
-            if (modRef == null)
-            {
-                Debug.LogError($"Modification '{mod}' not found! Skipping.");
-                continue;
-            }
-            data.modifications.Add(modRef);
-        }
-
-        foreach (var mod in temp.permanentModificationNames)
-        {
-            var modRef = ContentManager.Instance.GetModificationByName(mod);
-            if (modRef == null)
-            {
-                Debug.LogError($"Modification '{mod}' not found! Skipping.");
-                continue;
-            }
-            data.permanentModifications.Add(modRef);
-        }
-
-        return data;
+        return InstantiateWeapon(equippedWeapons.Find(w => w.weaponName == data.WeaponName));
     }
 
-    public void ResetWeapons()
+    private Weapon InstantiateWeapon(WeaponSaveData data)
     {
-        foreach (var entry in EquippedWeapons)
+        if (data == null) return null;
+
+        Weapon weapon = ContentManager.Instance.GetWeaponDataByName(data.weaponName);
+        if (weapon == null)
         {
-            var data = ContentManager.Instance.GetWeaponDataByName(entry.weaponName);
-
-            if (data == null)
-            {
-                Debug.LogError("Weapon with ID: " + entry.weaponName + " not found!");
-                continue;
-            }
-
-            data.modifications.Clear();
+            Debug.LogWarning("Weapon not found in ContentManager! Weapon type: " + weapon.WeaponName);
+            return null;
         }
+
+        weapon.modifications.Clear();
+        weapon.permanentModifications.Clear();
+
+        foreach (var name in data.modificationNames)
+        {
+            var mod = ContentManager.Instance.GetModificationByName(name);
+            if (mod != null) weapon.modifications.Add(mod);
+        }
+
+        foreach (var name in data.permanentModificationNames)
+        {
+            var mod = ContentManager.Instance.GetModificationByName(name);
+            if (mod != null) weapon.permanentModifications.Add(mod);
+        }
+
+        return weapon;
+    }
+
+    public Weapon GetWeaponByName(string weaponName)
+    {
+        var data = unlockedWeapons.Find(w => w.weaponName == weaponName);
+        return InstantiateWeapon(data);
     }
 }

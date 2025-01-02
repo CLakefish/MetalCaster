@@ -17,15 +17,10 @@ using UnityEngine;
 
 public class PlayerController : Player.PlayerComponent
 {
-    [Header("References")]
-    [SerializeField] public Rigidbody rb;
-    [SerializeField] public CapsuleCollider col;
-
     [Header("Collisions")]
-    [SerializeField] private LayerMask layers;
     [SerializeField] private float groundCastDist;
     [SerializeField] private float fallingCastDist;
-    [SerializeField] private int wallCastIncrements;
+    [SerializeField] private int   wallCastIncrements;
     [SerializeField] private float wallCastDistance;
     [SerializeField] private float interpolateNormalSpeed;
 
@@ -104,20 +99,20 @@ public class PlayerController : Player.PlayerComponent
 
     private float Size {
         get { 
-            return col.height; 
+            return CapsuleCollider.height; 
         }
         set {
-            float start = col.height;
+            float start = CapsuleCollider.height;
             float hD    = value - start;
 
-            col.height += hD;
+            CapsuleCollider.height += hD;
             if (GroundCollision) rb.MovePosition(rb.position + Vector3.up * hD / 2.0f);
         }
     }
 
     private bool CanUncrouch {
         get {
-            return !Physics.SphereCast(rb.transform.position, col.radius + 0.05f, Vector3.up, out RaycastHit _, 1.1f, layers);
+            return !Physics.SphereCast(rb.transform.position, CapsuleCollider.radius + 0.05f, Vector3.up, out RaycastHit _, 1.1f, GroundLayer);
         }
     }
 
@@ -334,12 +329,12 @@ public class PlayerController : Player.PlayerComponent
     {
         float castDist = (CurrentState == Grounded ? groundCastDist : fallingCastDist) * Size / 2.0f;
 
-        if (Physics.SphereCast(rb.transform.position, groundCastRad, Vector3.down, out RaycastHit interpolated, castDist, layers))
+        if (Physics.SphereCast(rb.transform.position, groundCastRad, Vector3.down, out RaycastHit interpolated, castDist, GroundLayer))
         {
             Vector3 dir           = (interpolated.point - rb.transform.position).normalized;
             Vector3 desiredNormal = interpolated.normal;
 
-            if (Physics.Raycast(rb.transform.position, dir, out RaycastHit nonInterpolated, dir.magnitude + raycastMargin, layers)) {
+            if (Physics.Raycast(rb.transform.position, dir, out RaycastHit nonInterpolated, dir.magnitude + raycastMargin, GroundLayer)) {
                 // FUCKKKKK!!!!
                 if (Vector3.Angle(Vector3.up, nonInterpolated.normal) >= 90) {
                     desiredNormal = Vector3.up;
@@ -375,7 +370,7 @@ public class PlayerController : Player.PlayerComponent
         {
             Vector3 dir = new Vector3(Mathf.Cos(P2 * i), 0, Mathf.Sin(P2 * i)).normalized;
 
-            if (Physics.Raycast(rb.position, dir, out RaycastHit hit, wallCastDistance, layers)) {
+            if (Physics.Raycast(rb.position, dir, out RaycastHit hit, wallCastDistance, GroundLayer)) {
                 combined += hit.normal;
             }
         }
@@ -728,17 +723,19 @@ public class PlayerController : Player.PlayerComponent
     }
 
     private void OnDrawGizmos() {
+        return;
+        Player Player = GetComponent<Player>();
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(rb.transform.position + new Vector3(0, -groundCastDist * Size / 2, 0), groundCastRad);
+        Gizmos.DrawWireSphere(Player.rb.transform.position + new Vector3(0, -groundCastDist * Size / 2, 0), groundCastRad);
 
         Gizmos.color = Color.blue;
-        Gizmos.DrawWireSphere(rb.transform.position + new Vector3(0, -fallingCastDist * Size / 2, 0), groundCastRad);
+        Gizmos.DrawWireSphere(Player.rb.transform.position + new Vector3(0, -fallingCastDist * Size / 2, 0), groundCastRad);
 
         if (wallCastIncrements <= 0) return;
 
         Gizmos.color = Color.green;
         float P2 = Mathf.PI * 2 / wallCastIncrements;
-        for (float i = 0; i < wallCastIncrements; i++) Gizmos.DrawRay(rb.position, new Vector3(Mathf.Cos(P2 * i), 0, Mathf.Sin(P2 * i)).normalized * wallCastDistance);
+        for (float i = 0; i < wallCastIncrements; i++) Gizmos.DrawRay(Player.rb.position, new Vector3(Mathf.Cos(P2 * i), 0, Mathf.Sin(P2 * i)).normalized * wallCastDistance);
     }
 
     private class DebugFlyingState : State<PlayerController>

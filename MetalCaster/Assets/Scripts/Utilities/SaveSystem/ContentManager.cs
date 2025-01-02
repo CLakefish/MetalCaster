@@ -3,21 +3,20 @@ using UnityEngine;
 
 public class ContentManager : MonoBehaviour
 {
-    [SerializeField] private List<WeaponModification> modifiers;
-    [SerializeField] private List<Weapon> weapons;
+    [SerializeField] private List<Modification> modifiers;
+    [SerializeField] private List<Weapon>             weapons;
 
     private Dictionary<string, Weapon> weaponLookup;
-    private Dictionary<string, WeaponModification> modificationLookup;
+    private Dictionary<string, Modification> modificationLookup;
 
-    public List<WeaponModification> Modifiers => modifiers;
+    public List<Modification> Modifiers => modifiers;
 
     public static ContentManager Instance;
 
-    public void Awake()
-    {
+    private void OnEnable() {
         if (Instance == null) Instance = this;
 
-        weaponLookup = new();
+        weaponLookup       = new();
         modificationLookup = new();
 
         foreach (var mod in modifiers) {
@@ -44,9 +43,9 @@ public class ContentManager : MonoBehaviour
         return foundWeapon;
     }
 
-    public WeaponModification GetModificationByName(string modName)
+    public Modification GetModificationByName(string modName)
     {
-        modificationLookup.TryGetValue(modName, out WeaponModification foundMod);
+        modificationLookup.TryGetValue(modName, out Modification foundMod);
         return foundMod;
     }
 }

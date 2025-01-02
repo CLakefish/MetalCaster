@@ -4,55 +4,53 @@ using UnityEngine;
 public class Player : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private PlayerController playerMovement;
-    [SerializeField] private PlayerCamera     playerCamera;
-    [SerializeField] private PlayerInput      playerInput;
-    [SerializeField] private PlayerWeapon     playerWeapon;
-    [SerializeField] private PlayerHealth     playerHealth;
+    [SerializeField] public PlayerController PlayerMovement;
+    [SerializeField] public PlayerCamera     PlayerCamera;
+    [SerializeField] public PlayerInput      PlayerInput;
+    [SerializeField] public PlayerWeapon     PlayerWeapon;
+    [SerializeField] public PlayerHealth     PlayerHealth;
 
     [Header("UI")]
-    [SerializeField] private PlayerHUD playerHUD;
-    [SerializeField] private PauseMenu pauseMenu;
+    [SerializeField] public PlayerHUD PlayerHUD;
+    [SerializeField] public PauseMenu PauseMenu;
 
     [Header("Physics")]
     [SerializeField] public Rigidbody rb;
+    [SerializeField] public CapsuleCollider capsuleCollider;
+    [SerializeField] public LayerMask groundLayer;
+    [SerializeField] public LayerMask hittableLayer;
 
     public static Player Instance;
 
-    public Camera GetCamera() {
-        return Instance.playerCamera.Camera;
-    }
-
-    private void OnEnable()
-    {
+    private void OnEnable() {
         if (Instance == null) Instance = this;
-    }
 
-    public void Awake()
-    {
-        playerMovement.SetPlayer(this);
-        playerCamera.SetPlayer(this);
-        playerInput.SetPlayer(this);
-        playerWeapon.SetPlayer(this);
-        playerHUD.SetPlayer(this);
-        pauseMenu.SetPlayer(this);
-    }
+        PlayerMovement.SetPlayer(this);
+        PlayerCamera.SetPlayer(this);
+        PlayerInput.SetPlayer(this);
+        PlayerWeapon.SetPlayer(this);
+        PlayerHUD.SetPlayer(this);
+        PauseMenu.SetPlayer(this);
+    } 
 
     public class PlayerComponent : MonoBehaviour
     {
         private Player player;
 
         public void SetPlayer(Player player)    => this.player = player;
-        public PlayerController GetController() { return player.playerMovement; }
-        public PlayerCamera     GetCamera()     { return player.playerCamera; }
-        public PlayerWeapon     GetWeapon()     { return player.playerWeapon; }
 
         protected Player           Player          => player;
-        protected PlayerController PlayerMovement  => player.playerMovement;
-        protected PlayerInput      PlayerInput     => player.playerInput;
-        protected PlayerCamera     PlayerCamera    => player.playerCamera;
-        protected PlayerWeapon     PlayerWeapon    => player.playerWeapon;
-        protected PlayerHealth     PlayerHealth    => player.playerHealth;
-        protected PlayerHUD        PlayerHUD       => player.playerHUD;
+        protected PlayerController PlayerMovement  => player.PlayerMovement;
+        protected PlayerInput      PlayerInput     => player.PlayerInput;
+        protected PlayerCamera     PlayerCamera    => player.PlayerCamera;
+        protected PlayerWeapon     PlayerWeapon    => player.PlayerWeapon;
+        protected PlayerHealth     PlayerHealth    => player.PlayerHealth;
+        protected PlayerHUD        PlayerHUD       => player.PlayerHUD;
+
+
+        protected Rigidbody rb                    => player.rb;
+        protected CapsuleCollider CapsuleCollider => player.capsuleCollider;
+        protected LayerMask GroundLayer           => player.groundLayer;
+        protected LayerMask HittableLayer         => player.hittableLayer;
     }
 }
