@@ -16,7 +16,7 @@ public class Ricochet : Modification.Queue
         activeBullets = 0;
     }
 
-    public override void OnHit(ref RaycastHit hit, ref Bullet bullet)
+    public override void OnFirstHit(ref RaycastHit hit, ref Bullet bullet)
     {
         bullet.direction = (hit.point - bullet.position).normalized;
         bullet.position  = hit.point;
@@ -31,7 +31,7 @@ public class Ricochet : Modification.Queue
         {
             var bullet = Next();
 
-            if (bullet.ricochetCount <= 0) {
+            if (bullet.ricochetCount <= 0 || bullet.hitObjects.Count > 0) {
                 activeBullets--;
                 continue;
             }
@@ -41,20 +41,22 @@ public class Ricochet : Modification.Queue
             if (Physics.Raycast(bullet.position, reflected, out RaycastHit hit, Mathf.Infinity, ricochetLayers))
             {
                 InstantiateLine(bullet.position, hit.point);
-                bullet.normal = hit.normal;
+                bullet.normal   = hit.normal;
+                bullet.position = hit.point;
+                bullet.ricochetCount--;
+
+                if (!bullet.hitObjects.Contains(hit.collider)) bullet.hitObjects.Add(hit.collider);
 
                 if (hit.collider.TryGetComponent(out Health hp)) hp.Damage(bullet.damage);
 
-                bullet.ricochetCount--;
-
                 activeBullets--;
 
-                Player.PlayerWeapon.BulletManager.QueueBullet(hit.point, (hit.point - bullet.position).normalized, ref bullet);
+                Player.PlayerWeapon.BulletManager.QueueBullet(ref bullet);
                 continue;
             }
 
             activeBullets--;
-            if (reflected != Vector3.zero) InstantiateLine(bullet.position, reflected * 1000);
+            if (reflected != Vector3.zero) InstantiateLine(bullet.position, bullet.position + (reflected * 1000));
         }
     }
 

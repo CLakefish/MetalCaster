@@ -14,12 +14,12 @@ public class LineRendering : Modification.AlwaysEmpty
         Destroy(line.gameObject, destroyTime);
     }
 
-    public override void OnHit(ref RaycastHit hit, ref Bullet bullet) {
+    public override void OnFirstHit(ref RaycastHit hit, ref Bullet bullet) {
         Vector3 muzzlePos = Player.PlayerWeapon.Selected.Weapon.MuzzlePos.transform.position;
         InstantiateLine(muzzlePos, hit.point);
     }
 
-    public override void OnMiss(Vector3 pos, Vector3 dir) {
+    public override void OnFirstMiss(Vector3 pos, Vector3 dir) {
         Vector3 muzzlePos = Player.PlayerWeapon.Selected.Weapon.transform.position;
         InstantiateLine(muzzlePos, muzzlePos + (Player.PlayerCamera.CameraForward * 1000));
     }

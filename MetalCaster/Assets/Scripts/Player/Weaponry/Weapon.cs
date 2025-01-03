@@ -118,13 +118,23 @@ public class Weapon : MonoBehaviour
             bullet.position  = pos;
             bullet.direction = dir;
 
-            if (Physics.Raycast(pos, dir, out RaycastHit hit, Mathf.Infinity, Player.hittableLayer)) {
-                if (hit.collider.TryGetComponent(out Health hp)) hp.Damage(WeaponData.damage);
+            switch (WeaponData.type) {
+                case PlayerWeaponData.ProjectileType.Raycast:
 
-                foreach (var mod in mods) mod.OnHit(ref hit, ref bullet);
-            }
-            else {
-                foreach (var mod in mods) mod.OnMiss(pos, dir);
+                    if (Physics.Raycast(pos, dir, out RaycastHit hit, Mathf.Infinity, Player.hittableLayer)) {
+                        if (hit.collider.TryGetComponent(out Health hp)) hp.Damage(WeaponData.damage);
+
+                        foreach (var mod in mods) mod.OnFirstHit(ref hit, ref bullet);
+                    }
+                    else {
+                        foreach (var mod in mods) mod.OnFirstMiss(pos, dir);
+                    }
+
+                    break;
+
+                case PlayerWeaponData.ProjectileType.GameObject:
+                    foreach (var mod in mods) mod.OnFirstShot(pos, dir, ref bullet);
+                    break;
             }
         }
     }

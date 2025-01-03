@@ -12,7 +12,7 @@ public class Bullet
     public int damage;
     public int ricochetCount;
 
-    public HashSet<Collider> hitObjects;
+    public List<Collider> hitObjects;
 }
 
 public class BulletManager : PlayerWeapon.PlayerWeaponSystem
@@ -33,9 +33,7 @@ public class BulletManager : PlayerWeapon.PlayerWeaponSystem
         return bullet;
     }
 
-    public void QueueBullet(Vector3 pos, Vector3 dir, ref Bullet bullet) {
-        bullet.direction = dir;
-        bullet.position  = pos;
+    public void QueueBullet(ref Bullet bullet) {
         bulletQueue.Enqueue(bullet);
     }
 

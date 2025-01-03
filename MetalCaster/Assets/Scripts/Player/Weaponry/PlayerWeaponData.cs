@@ -16,6 +16,7 @@ public class PlayerWeaponData : ScriptableObject
     [SerializeField] public int damage;
     [SerializeField] public int magazineSize;
     [SerializeField] public float shotDeviation;
+    [SerializeField] public int ricochetCount = 0;
     [SerializeField] public int bulletsPerShot = 1;
     [SerializeField] public ProjectileType type;
 
@@ -31,7 +32,6 @@ public class PlayerWeaponData : ScriptableObject
 
     [Header("Debugging")]
     [HideInInspector] public int shotCount = 0;
-    [HideInInspector] public int ricochetCount = 0;
     [HideInInspector] public float prevFireTime = 0;
 
     public void Set(PlayerWeaponData other)

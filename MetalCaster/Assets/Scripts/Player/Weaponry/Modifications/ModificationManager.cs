@@ -63,8 +63,7 @@ public class ModificationManager : PlayerWeapon.PlayerWeaponSystem
     {
         for (int i = 0; i < modifications.Count; ++i) {
             var mod = modifications[i];
-            if (mod.IsEmpty() && mod.MarkedToRemove)
-            {
+            if (mod.IsEmpty() && mod.MarkedToRemove) {
                 RemoveModification(mod.ModificationName);
             }
         }

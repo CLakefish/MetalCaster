@@ -46,11 +46,12 @@ public class Modification : ScriptableObject
 
     public virtual void ProvideBullet(ref Bullet bullet) { }
     public virtual void Modify(Weapon context)           { }
-    public virtual void OnReload()                       { }
-    public virtual void OnUpdate()                       { }
-    public virtual void AltFire()                        { }
 
+    public virtual void OnFirstShot(Vector3 pos, Vector3 dir, ref Bullet bullet) { }
+    public virtual void OnFirstHit(ref RaycastHit hit, ref Bullet bullet)        { }
+    public virtual void OnFirstMiss(Vector3 pos, Vector3 dir)                    { }
 
-    public virtual void OnHit(ref RaycastHit hit, ref Bullet bullet) { }
-    public virtual void OnMiss(Vector3 pos, Vector3 dir)             { }
+    public virtual void OnReload() { }
+    public virtual void OnUpdate() { }
+    public virtual void AltFire() { }
 }

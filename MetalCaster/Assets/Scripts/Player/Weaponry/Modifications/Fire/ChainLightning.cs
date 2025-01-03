@@ -9,22 +9,27 @@ public class ChainLightning : Modification.Queue
     [SerializeField] private float colliderRadius;
     [SerializeField] private LayerMask collidableLayer;
 
+
+    [Header("Display")]
+    [SerializeField] private LineRenderer lineRenderer;
+    [SerializeField] private float destroyTime;
+
     public override void Modify(Weapon context) {
         context.WeaponData.ricochetCount += ricochetAddition;
         activeBullets = 0;
     }
 
-    public override void OnHit(ref RaycastHit hit, ref Bullet bullet)
+    public override void OnFirstHit(ref RaycastHit hit, ref Bullet bullet)
     {
         bullet.hitObjects = new() { hit.collider };
+
         if (!hit.collider.TryGetComponent(out Health _)) return;
+
         ProvideBullet(ref bullet);
     }
 
     public override void OnUpdate()
     {
-        Debug.Log(activeBullets);
-
         while (bulletQueue.Count > 0)
         {
             var bullet = Next();
@@ -34,7 +39,8 @@ public class ChainLightning : Modification.Queue
                 continue;
             }
 
-            Collider[] colliders = Physics.OverlapSphere(bullet.position, colliderRadius, collidableLayer);
+            Vector3 pos          = bullet.hitObjects.Count == 0 ? bullet.position : bullet.hitObjects[^1].transform.position;
+            Collider[] colliders = Physics.OverlapSphere(pos, colliderRadius, collidableLayer);
 
             Collider closest = null;
             float dist = Mathf.Infinity;
@@ -43,7 +49,7 @@ public class ChainLightning : Modification.Queue
             {
                 if (bullet.hitObjects.Contains(collider)) continue;
 
-                float newDist = Vector3.Distance(collider.transform.position, bullet.position);
+                float newDist = Vector3.Distance(collider.transform.position, pos);
                 if (newDist < dist)
                 {
                     closest = collider;
@@ -56,14 +62,25 @@ public class ChainLightning : Modification.Queue
                 continue;
             }
 
+            InstantiateLine(pos, closest.gameObject.transform.position);
+
+            bullet.normal = closest.transform.forward;
+
+            bullet.ricochetCount--;
             bullet.hitObjects.Add(closest);
 
             if (closest.TryGetComponent(out Health hp)) hp.Damage(bullet.damage);
 
-            bullet.ricochetCount--;
-
             --activeBullets;
-            Player.PlayerWeapon.BulletManager.QueueBullet(closest.transform.position, Vector3.zero, ref bullet);
+            Player.PlayerWeapon.BulletManager.QueueBullet(ref bullet);
         }
+    }
+
+    private void InstantiateLine(Vector3 p0, Vector3 p1)
+    {
+        LineRenderer line = Instantiate(lineRenderer, Vector3.zero, Quaternion.identity);
+        line.SetPosition(0, p0);
+        line.SetPosition(1, p1);
+        Destroy(line.gameObject, destroyTime);
     }
 }
