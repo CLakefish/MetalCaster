@@ -45,9 +45,12 @@ public class Ricochet : Modification.Queue
                 bullet.position = hit.point;
                 bullet.ricochetCount--;
 
-                if (!bullet.hitObjects.Contains(hit.collider)) bullet.hitObjects.Add(hit.collider);
+                if (hit.collider.TryGetComponent(out Health hp))
+                {
+                    if (!bullet.hitObjects.Contains(hit.collider)) bullet.hitObjects.Add(hit.collider);
 
-                if (hit.collider.TryGetComponent(out Health hp)) hp.Damage(bullet.damage);
+                    hp.Damage(bullet.damage);
+                }
 
                 activeBullets--;
 

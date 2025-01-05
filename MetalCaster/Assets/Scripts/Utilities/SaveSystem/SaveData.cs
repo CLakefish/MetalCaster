@@ -8,13 +8,8 @@ public class WeaponSaveData
     [SerializeField] public string weaponName;
     [SerializeField] public List<string> modificationNames;
     [SerializeField] public List<string> permanentModificationNames;
-
-    public bool Equals(WeaponSaveData other)
-    {
-        if (other == null) return false;
-
-        return weaponName.Equals(other.weaponName);
-    }
+    //public Dictionary<string, int> modificationSlots;
+    //public int totalModificationSlots;
 }
 
 [CreateAssetMenu(menuName = "Data/Save Data")]
@@ -91,6 +86,8 @@ public class SaveData : ScriptableObject
             weaponName                 = desiredWeapon.WeaponName,
             modificationNames          = desiredWeapon.modifications.ConvertAll(mod => mod.ModificationName),
             permanentModificationNames = desiredWeapon.permanentModifications.ConvertAll(mod => mod.ModificationName),
+            //modificationSlots          = new(),
+            //totalModificationSlots     = desiredWeapon.WeaponData.modificationSlots,
         };
 
         unlockedWeapons.Add(data);
@@ -117,6 +114,12 @@ public class SaveData : ScriptableObject
         }
 
         if (equippedWeapons.Any(w => w.weaponName == desiredWeapon.WeaponName)) return false;
+
+        /*if (data.modificationSlots == null)
+        {
+            data.totalModificationSlots = desiredWeapon.WeaponData.modificationSlots;
+            data.modificationSlots = new(data.totalModificationSlots);
+        }*/
 
         equippedWeapons.Add(data);
         SaveAltered?.Invoke();
@@ -158,13 +161,31 @@ public class SaveData : ScriptableObject
             return;
         }
 
-        var mods     = desiredWeapon.modifications.ConvertAll         (w => w.ModificationName);
+        /*
+        Dictionary<string, int> modSlots = new();
+        List<string> mods = new();
+
+        for (int i = 0; i < desiredWeapon.WeaponData.modificationSlots; ++i)
+        {
+            var mod = desiredWeapon.modifications[i];
+
+            if (mod == null) continue;
+            
+            mods.Add(mod.ModificationName);
+            modSlots.Add(mod.ModificationName, i);
+        }
+
+        List<string> permMods = desiredWeapon.permanentModifications.ConvertAll(w => w.ModificationName);*/
+        var mods = desiredWeapon.modifications.ConvertAll(w => w.ModificationName);
         var permMods = desiredWeapon.permanentModifications.ConvertAll(w => w.ModificationName);
 
         unlockData.modificationNames = mods;
         equipData.modificationNames  = mods;
         unlockData.permanentModificationNames = permMods;
         equipData.permanentModificationNames  = permMods;
+
+        //equipData.modificationSlots  = modSlots;
+        //unlockData.modificationSlots = modSlots;
 
         SaveAltered?.Invoke();
     }
@@ -201,16 +222,36 @@ public class SaveData : ScriptableObject
         weapon.modifications.Clear();
         weapon.permanentModifications.Clear();
 
+        //weapon.modifications = new(data.totalModificationSlots);
+
         foreach (var name in data.modificationNames)
         {
             var mod = ContentManager.Instance.GetModificationByName(name);
-            if (mod != null) weapon.modifications.Add(mod);
+            if (mod == null) {
+                Debug.LogError("Unable to load modification! Modification ID: " + mod.ModificationName);
+                continue;
+            }
+
+            /*if (data.modificationSlots == null)
+            {
+                weapon.modifications.Add(mod);
+                continue;
+            }
+
+            weapon.modifications[data.modificationSlots[mod.ModificationName]] = mod;*/
+            weapon.modifications.Add(mod);
         }
 
         foreach (var name in data.permanentModificationNames)
         {
             var mod = ContentManager.Instance.GetModificationByName(name);
-            if (mod != null) weapon.permanentModifications.Add(mod);
+            if (mod == null)
+            {
+                Debug.LogError("Unable to load modification! Modification ID: " + mod.ModificationName);
+                continue;
+            }
+
+            weapon.permanentModifications.Add(mod);
         }
 
         return weapon;

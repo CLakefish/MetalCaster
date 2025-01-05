@@ -34,12 +34,12 @@ public class ChainLightning : Modification.Queue
         {
             var bullet = Next();
 
-            if (bullet.ricochetCount <= 0) {
+            if (bullet.ricochetCount <= 0 || bullet.hitObjects.Count <= 0) {
                 activeBullets--;
                 continue;
             }
 
-            Vector3 pos          = bullet.hitObjects.Count == 0 ? bullet.position : bullet.hitObjects[^1].transform.position;
+            Vector3 pos          = bullet.hitObjects[^1].transform.position;
             Collider[] colliders = Physics.OverlapSphere(pos, colliderRadius, collidableLayer);
 
             Collider closest = null;

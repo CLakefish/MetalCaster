@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: New Save
   m_EditorClassIdentifier: 
   saveName: New Save.json
-  saveTime: 0
+  saveTime: 4674.0034
   modifications: []
   equippedWeapons: []
   unlockedWeapons: []
