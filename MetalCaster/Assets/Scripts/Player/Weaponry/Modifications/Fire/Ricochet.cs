@@ -12,12 +12,13 @@ public class Ricochet : Modification.Queue
     [SerializeField] private float destroyTime;
 
     public override void Modify(Weapon context) {
-        context.WeaponData.ricochetCount += ricochetAddition;
+        context.AlteredData.ricochetCount += ricochetAddition;
         activeBullets = 0;
     }
 
     public override void OnFirstHit(ref RaycastHit hit, ref Bullet bullet)
     {
+        if (bullet.hitObjects == null) bullet.hitObjects = new();
         bullet.direction = (hit.point - bullet.position).normalized;
         bullet.position  = hit.point;
         bullet.normal    = hit.normal;
@@ -31,18 +32,21 @@ public class Ricochet : Modification.Queue
         {
             var bullet = Next();
 
-            if (bullet.ricochetCount <= 0 || bullet.hitObjects.Count > 0) {
+            if (bullet.ricochetCount <= 0 || bullet.hitObjects.Count > 1) {
                 activeBullets--;
                 continue;
             }
 
             Vector3 reflected = Vector3.Reflect(bullet.direction, bullet.normal);
 
+            Debug.DrawRay(bullet.position, reflected * 5, Color.green, 100);
+
             if (Physics.Raycast(bullet.position, reflected, out RaycastHit hit, Mathf.Infinity, ricochetLayers))
             {
                 InstantiateLine(bullet.position, hit.point);
-                bullet.normal   = hit.normal;
-                bullet.position = hit.point;
+                bullet.normal    = hit.normal;
+                bullet.position  = hit.point;
+                bullet.direction = reflected;
                 bullet.ricochetCount--;
 
                 if (hit.collider.TryGetComponent(out Health hp))

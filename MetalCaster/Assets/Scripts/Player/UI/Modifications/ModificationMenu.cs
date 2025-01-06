@@ -22,9 +22,8 @@ public class ModificationMenu : SubMenu
     }
 
     private readonly List<Modification> equippedMods   = new();
-    private readonly List<Modification> unequippedMods = new();
-    private readonly List<GameObject>         slots          = new();
-    private readonly List<GameObject>         selectables    = new();
+    private readonly List<GameObject>   slots          = new();
+    private readonly List<GameObject>   selectables    = new();
 
     public override void OnOpen()
     {
@@ -46,39 +45,29 @@ public class ModificationMenu : SubMenu
         ClearAll();
 
         Weapon weapon = PlayerWeapon.Selected.Weapon;
+        int slotCount = weapon.BaseData.modificationSlots;
 
-        equippedMods.AddRange(weapon.modifications);
-        unequippedMods.AddRange(GameDataManager.Instance.ActiveSave.Modifications.Except(equippedMods));
-
-        for (int i = 0; i < equippedMods.Count; i++)
+        for (int i = 0; i < slotCount; i++)
         {
-            GameObject temp = Instantiate(modificationSelectedPrefab, selectedHolder);
-            temp.GetComponent<ModificationSlot>().Initialize(this);
+            var slot = Instantiate(modificationSelectedPrefab, selectedHolder);
+            slot.GetComponent<ModificationSlot>().Initialize(this, i);
 
-            CreateModificationDraggable(temp.transform, equippedMods[i], weapon);
-
-            selectables.Add(temp);
-        }
-
-        for (int i = 0; i < weapon.WeaponData.modificationSlots - equippedMods.Count; ++i)
-        {
-            GameObject temp = Instantiate(modificationSelectedPrefab, selectedHolder);
-            temp.GetComponent<ModificationSlot>().Initialize(this);
-            selectables.Add(temp);
-        }
-
-        List<Modification> mods = GameDataManager.Instance.ActiveSave.Modifications;
-
-        for (int i = 0; i < mods.Count; ++i)
-        {
-            GameObject temp = Instantiate(modificationSlotPrefab, slotHolder);
-
-            if (!equippedMods.Contains(mods[i]))
+            if (weapon.modifications[i] != null)
             {
-                CreateModificationDraggable(temp.transform, mods[i], weapon);
+                CreateModificationDraggable(slot.transform, weapon.modifications[i], weapon);
+                equippedMods.Add(weapon.modifications[i]);
             }
 
-            selectables.Add(temp);
+            slots.Add(slot);
+        }
+
+        var allUnlockedMods = GameDataManager.Instance.ActiveSave.Modifications;
+
+        foreach (var mod in allUnlockedMods)
+        {
+            var slotGO = Instantiate(modificationSlotPrefab, slotHolder);
+            if (!equippedMods.Contains(mod)) CreateModificationDraggable(slotGO.transform, mod, weapon);
+            selectables.Add(slotGO);
         }
     }
 
@@ -103,7 +92,6 @@ public class ModificationMenu : SubMenu
     private void ClearAll()
     {
         equippedMods.Clear();
-        unequippedMods.Clear();
 
         if (slots.Count > 0 || selectables.Count > 0)
         {

@@ -559,11 +559,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1700adf21cf8cea4d917b108aae77502, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  PlayerMovement: {fileID: 3056770641862167720}
-  PlayerCamera: {fileID: 5890483556396654734}
-  PlayerInput: {fileID: 341725526681868616}
-  PlayerWeapon: {fileID: 6746887161221375827}
-  PlayerHealth: {fileID: 2769928743667661094}
+  playerMovement: {fileID: 3056770641862167720}
+  playerCamera: {fileID: 5890483556396654734}
+  playerInput: {fileID: 341725526681868616}
+  playerWeapon: {fileID: 6746887161221375827}
+  playerHealth: {fileID: 2769928743667661094}
   PlayerHUD: {fileID: 468533919752757253}
   PauseMenu: {fileID: 320311109738174757}
   rb: {fileID: 4561073770786325875}
@@ -574,6 +574,9 @@ MonoBehaviour:
   hittableLayer:
     serializedVersion: 2
     m_Bits: 257
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 256
 --- !u!114 &341725526681868616
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -738,7 +741,7 @@ MonoBehaviour:
   groundCastDist: 1
   fallingCastDist: 0.8
   wallCastIncrements: 8
-  wallCastDistance: 0.6
+  wallCastDistance: 0.8
   interpolateNormalSpeed: 25
   moveSpeed: 12
   crouchSpeed: 5

@@ -9,13 +9,12 @@ public class ChainLightning : Modification.Queue
     [SerializeField] private float colliderRadius;
     [SerializeField] private LayerMask collidableLayer;
 
-
     [Header("Display")]
     [SerializeField] private LineRenderer lineRenderer;
     [SerializeField] private float destroyTime;
 
     public override void Modify(Weapon context) {
-        context.WeaponData.ricochetCount += ricochetAddition;
+        context.AlteredData.ricochetCount += ricochetAddition;
         activeBullets = 0;
     }
 
@@ -39,11 +38,12 @@ public class ChainLightning : Modification.Queue
                 continue;
             }
 
-            Vector3 pos          = bullet.hitObjects[^1].transform.position;
+            Collider   hit       = bullet.hitObjects[^1];
+            Vector3    pos       = hit == null ? bullet.position : hit.transform.position;
             Collider[] colliders = Physics.OverlapSphere(pos, colliderRadius, collidableLayer);
 
             Collider closest = null;
-            float dist = Mathf.Infinity;
+            float    dist    = Mathf.Infinity;
 
             foreach (var collider in colliders)
             {
@@ -69,8 +69,13 @@ public class ChainLightning : Modification.Queue
             bullet.ricochetCount--;
             bullet.hitObjects.Add(closest);
 
-            if (closest.TryGetComponent(out Health hp)) hp.Damage(bullet.damage);
+            if (!closest.TryGetComponent(out Health hp))
+            {
+                --activeBullets;
+                return;
+            }
 
+            hp.Damage(bullet.damage);
             --activeBullets;
             Player.PlayerWeapon.BulletManager.QueueBullet(ref bullet);
         }

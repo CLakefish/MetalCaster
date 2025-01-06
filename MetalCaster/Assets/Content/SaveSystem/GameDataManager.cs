@@ -30,8 +30,13 @@ public class GameDataManager : MonoBehaviour
     [SerializeField] private SaveData saveData;
     [SerializeField] private string saveFolderName;
 
+    [Header("Content")]
+    [SerializeField] private ContentManager contentManager;
+
     public static GameDataManager Instance;
-    public SaveData ActiveSave => saveData;
+
+    public ContentManager ContentManager => contentManager;
+    public SaveData       ActiveSave     => saveData;
 
     private string FilePath {
         get {
@@ -40,13 +45,19 @@ public class GameDataManager : MonoBehaviour
     }
 
     private void OnEnable() {
-        if (Instance == null) Instance = this;
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
 
         ActiveSave.SaveAltered += Write;
-    }
+        contentManager.Enable();
 
-    private void Awake() 
-    {
+        ActiveSave.RecheckSave();
+
         saveFolderName = Path.Combine(Application.persistentDataPath, "MetalCaster Data");
 
         if (!Directory.Exists(saveFolderName)) {

@@ -3,10 +3,10 @@ using UnityEngine;
 
 public class ModificationManager : PlayerWeapon.PlayerWeaponSystem
 {
-    [SerializeField] private List<Modification> m = new();
-
     private readonly Dictionary<string, Modification> modificationLookup = new();
     private readonly List<Modification> modifications = new();
+
+    public List<Modification> ActiveModifications => modifications;
 
     public void AddModification(string modName) {
         if (modificationLookup.ContainsKey(modName)) {
@@ -18,7 +18,6 @@ public class ModificationManager : PlayerWeapon.PlayerWeaponSystem
         mod.SetPlayer(Player);
         modificationLookup.Add(modName, mod);
         modifications.Add(mod);
-        m.Add(mod);
     }
 
     public void AddModifications(List<Modification> mods) {
@@ -28,7 +27,6 @@ public class ModificationManager : PlayerWeapon.PlayerWeaponSystem
     }
 
     private void RemoveModification(string modName) {
-        m.Remove(modificationLookup[modName]);
         modifications.Remove(modificationLookup[modName]);
         modificationLookup.Remove(modName);
     }
@@ -44,7 +42,6 @@ public class ModificationManager : PlayerWeapon.PlayerWeaponSystem
             modificationLookup[mod].ProvideBullet(ref bullet);
         }
     }
-
 
     public void MarkModifications(List<Modification> mods) {
         foreach (var mod in mods) {

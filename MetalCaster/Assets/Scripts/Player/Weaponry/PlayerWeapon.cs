@@ -106,16 +106,17 @@ public class PlayerWeapon : Player.PlayerComponent
 
         newWeapon.Equip(Player);
 
-        newWeapon.OnFire      += () => { bulletMap[newWeapon.WeaponName] = newWeapon.WeaponData.shotCount; };
-        newWeapon.OnReloadEnd += () => { bulletMap[newWeapon.WeaponName] = newWeapon.WeaponData.magazineSize; };
+        newWeapon.OnFire      += () => { bulletMap[newWeapon.WeaponName] = newWeapon.AlteredData.shotCount; };
+        newWeapon.OnReloadEnd += () => { bulletMap[newWeapon.WeaponName] = newWeapon.AlteredData.magazineSize; };
 
         if (!bulletMap.ContainsKey(newWeapon.WeaponName)) {
-            bulletMap.Add(newWeapon.WeaponName, newWeapon.WeaponData.magazineSize);
+            bulletMap.Add(newWeapon.WeaponName, newWeapon.AlteredData.magazineSize);
         }
 
-        newWeapon.WeaponData.shotCount = bulletMap[Selected.Weapon.WeaponName];
+        newWeapon.AlteredData.shotCount = bulletMap[Selected.Weapon.WeaponName];
 
         foreach (var mod in Selected.Weapon.modifications) {
+            if (mod == null) continue;
             modificationManager.AddModification(mod.ModificationName);
         }
 
@@ -212,7 +213,7 @@ public class PlayerWeapon : Player.PlayerComponent
     {
         List<Modification> mods = new();
 
-        mods.AddRange(weapon.modifications);
+        mods.AddRange(weapon.modifications.Where(x => x != null));
         mods.AddRange(weapon.permanentModifications);
         return mods;
     }

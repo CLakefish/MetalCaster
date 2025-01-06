@@ -9,7 +9,7 @@ public class ProjectileLaunch : Modification
 
     public override void Modify(Weapon context)
     {
-        context.WeaponData.type = PlayerWeaponData.ProjectileType.GameObject;
+        context.AlteredData.type = PlayerWeaponData.ProjectileType.GameObject;
     }
 
     public override void OnFirstShot(Vector3 pos, Vector3 dir, ref Bullet bullet) {

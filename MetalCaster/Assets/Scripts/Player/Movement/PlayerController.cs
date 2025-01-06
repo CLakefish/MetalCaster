@@ -131,7 +131,7 @@ public class PlayerController : Player.PlayerComponent
 
     private Vector3 HorizontalVelocity {
         get {
-            return new Vector2(rb.linearVelocity.x, rb.linearVelocity.z);
+            return new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
         }
     }
 
@@ -614,7 +614,7 @@ public class PlayerController : Player.PlayerComponent
             }
 
             context.rb.linearVelocity         = new Vector3(temp.x, tempY, temp.z);
-            context.DesiredHorizontalVelocity = context.HorizontalVelocity;
+            context.DesiredHorizontalVelocity = new Vector2(context.HorizontalVelocity.x, context.HorizontalVelocity.z);
 
             prevForward = context.WallNormal;
             targetY     = context.rb.transform.localEulerAngles.y;
@@ -650,18 +650,24 @@ public class PlayerController : Player.PlayerComponent
 
             if (angle <= context.wallRunAngleChangeMax) return;
 
-            projected *= Mathf.Max(context.wallRunSpeed, context.rb.linearVelocity.magnitude);
+            projected *= Mathf.Max(context.wallRunSpeed, context.DesiredHorizontalVelocity.magnitude);
 
             float downwardForce = context.rb.linearVelocity.y > 0 
                 ? context.rb.linearVelocity.y - (context.gravity * Time.fixedDeltaTime)
                 : context.rb.linearVelocity.y - (context.wallRunGravity * Time.fixedDeltaTime);
 
-            context.DesiredHorizontalVelocity = new Vector2(projected.x, projected.z) + (new Vector2(context.WallNormal.x, context.WallNormal.z) * Time.fixedDeltaTime);
+            context.DesiredHorizontalVelocity = new Vector2(projected.x, projected.z);
             context.rb.linearVelocity         = new Vector3(context.DesiredHorizontalVelocity.x, downwardForce, context.DesiredHorizontalVelocity.y);
         }
 
         Vector3 GetProjected() {
-            return Vector3.ProjectOnPlane(context.rb.linearVelocity, context.WallNormal).normalized;
+            Vector3 dir;
+
+            if (context.HorizontalVelocity.magnitude <= Mathf.Epsilon) dir = context.PlayerCamera.CameraForwardNoY;
+            else                                                       dir = context.HorizontalVelocity;
+
+            Vector3 projected = Vector3.ProjectOnPlane(dir, context.WallNormal).normalized;
+            return projected;
         }
     }
 

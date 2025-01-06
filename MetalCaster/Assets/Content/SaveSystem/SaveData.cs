@@ -2,14 +2,72 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+#if UNITY_EDITOR
+
+using UnityEditor;
+
+[CustomEditor(typeof(SaveData))]
+public class SaveDataEditor : Editor
+{
+    public override void OnInspectorGUI()
+    {
+        SaveData data = (SaveData)target;
+        GameDataManager manager = FindFirstObjectByType<GameDataManager>();
+
+        if (GUILayout.Button("Unlock all Modifications"))
+        {
+            foreach (var mod in manager.ContentManager.Modifiers) data.UnlockModification(mod);
+            manager.Write();
+            EditorUtility.SetDirty(data);
+            AssetDatabase.SaveAssetIfDirty(data);
+        }
+
+        if (GUILayout.Button("Unlock all Weapons"))
+        {
+            foreach (var weapon in manager.ContentManager.Weapons) data.UnlockWeapon(weapon);
+            manager.Write();
+            EditorUtility.SetDirty(data);
+            AssetDatabase.SaveAssetIfDirty(data);
+        }
+
+        if (GUILayout.Button("Lock all Modifications"))
+        {
+            data.LockAllModifications();
+            manager.Write();
+            EditorUtility.SetDirty(data);
+            AssetDatabase.SaveAssetIfDirty(data);
+        }
+
+        if (GUILayout.Button("Lock all Weapons"))
+        {
+            data.LockAllWeapons();
+            manager.Write();
+            EditorUtility.SetDirty(data);
+            AssetDatabase.SaveAssetIfDirty(data);
+        }
+
+        base.OnInspectorGUI();
+    }
+}
+
+
+#endif
+
+
 [System.Serializable]
 public class WeaponSaveData
 {
+    [System.Serializable]
+    public class Slot
+    {
+        public int slot;
+        public string ModificationName;
+    }
+
     [SerializeField] public string weaponName;
     [SerializeField] public List<string> modificationNames;
     [SerializeField] public List<string> permanentModificationNames;
-    //public Dictionary<string, int> modificationSlots;
-    //public int totalModificationSlots;
+    [SerializeField] public List<Slot> modificationSlots = new();
 }
 
 [CreateAssetMenu(menuName = "Data/Save Data")]
@@ -31,7 +89,7 @@ public class SaveData : ScriptableObject
     {
         get
         {
-            List<Modification> mods = new List<Modification>();
+            List<Modification> mods = new();
             foreach (var mod in modifications)
             {
                 mods.Add(ContentManager.Instance.GetModificationByName(mod));
@@ -71,7 +129,7 @@ public class SaveData : ScriptableObject
     /// By default will not equip it!
     /// </summary>
     /// <param name="desiredWeapon"></param>
-    public void UnlockWeapon(Weapon desiredWeapon) 
+    public void UnlockWeapon(Weapon desiredWeapon)
     {
         if (desiredWeapon == null)
         {
@@ -79,15 +137,19 @@ public class SaveData : ScriptableObject
             return;
         }
 
-        if (unlockedWeapons.Any(w => w.weaponName == desiredWeapon.WeaponName)) return;
+        if (unlockedWeapons.Any(w => w.weaponName == desiredWeapon.WeaponName))
+        {
+            WeaponSaveData unlockedData = unlockedWeapons.Find(w => w.weaponName == desiredWeapon.WeaponName);
+            unlockedData.permanentModificationNames = desiredWeapon.permanentModifications.ConvertAll(mod => mod.ModificationName);
+            return;
+        }
 
         WeaponSaveData data = new()
         {
             weaponName                 = desiredWeapon.WeaponName,
             modificationNames          = desiredWeapon.modifications.ConvertAll(mod => mod.ModificationName),
             permanentModificationNames = desiredWeapon.permanentModifications.ConvertAll(mod => mod.ModificationName),
-            //modificationSlots          = new(),
-            //totalModificationSlots     = desiredWeapon.WeaponData.modificationSlots,
+            modificationSlots          = new(),
         };
 
         unlockedWeapons.Add(data);
@@ -95,6 +157,32 @@ public class SaveData : ScriptableObject
     }
 
     #endregion
+
+    #region Locking
+
+    public void LockAllWeapons() {
+        equippedWeapons.Clear();
+        unlockedWeapons.Clear();
+    }
+
+    public void LockAllModifications() {
+        modifications.Clear();
+    }
+
+    #endregion
+
+    public void RecheckSave() {
+        // Permanent Modifications
+        foreach (var weapon in GameDataManager.Instance.ContentManager.Weapons) {
+            var data = equippedWeapons.Find(w => w.weaponName == weapon.WeaponName);
+            if (data != null) {
+                var mods = weapon.permanentModifications.ConvertAll(mod => mod.ModificationName);
+
+                data.permanentModificationNames = mods;
+                unlockedWeapons.Find(w => w.weaponName == weapon.WeaponName).permanentModificationNames = mods;
+            }
+        }
+    }
 
     #region Weapon Equipping
 
@@ -115,11 +203,9 @@ public class SaveData : ScriptableObject
 
         if (equippedWeapons.Any(w => w.weaponName == desiredWeapon.WeaponName)) return false;
 
-        /*if (data.modificationSlots == null)
-        {
-            data.totalModificationSlots = desiredWeapon.WeaponData.modificationSlots;
-            data.modificationSlots = new(data.totalModificationSlots);
-        }*/
+        if (data.modificationSlots == null) {
+            data.modificationSlots = new(desiredWeapon.BaseData.modificationSlots);
+        }
 
         equippedWeapons.Add(data);
         SaveAltered?.Invoke();
@@ -147,7 +233,6 @@ public class SaveData : ScriptableObject
 
     #endregion
 
-
     public void SaveWeapon(Weapon desiredWeapon)
     {
         if (desiredWeapon == null) return;
@@ -161,31 +246,35 @@ public class SaveData : ScriptableObject
             return;
         }
 
-        /*
-        Dictionary<string, int> modSlots = new();
-        List<string> mods = new();
+        unlockData.modificationSlots.Clear();
+        equipData.modificationSlots.Clear();
 
-        for (int i = 0; i < desiredWeapon.WeaponData.modificationSlots; ++i)
+        for (int i = 0; i < desiredWeapon.modifications.Count; i++)
         {
             var mod = desiredWeapon.modifications[i];
-
             if (mod == null) continue;
-            
-            mods.Add(mod.ModificationName);
-            modSlots.Add(mod.ModificationName, i);
+
+            WeaponSaveData.Slot slot = new()
+            {
+                slot = i,
+                ModificationName = mod.ModificationName,
+            };
+
+            unlockData.modificationSlots.Add(slot);
+            equipData.modificationSlots.Add(slot);
         }
 
-        List<string> permMods = desiredWeapon.permanentModifications.ConvertAll(w => w.ModificationName);*/
-        var mods = desiredWeapon.modifications.ConvertAll(w => w.ModificationName);
-        var permMods = desiredWeapon.permanentModifications.ConvertAll(w => w.ModificationName);
+        unlockData.modificationNames = desiredWeapon.modifications
+            .Where(m => m != null)
+            .Select(m => m.ModificationName)
+            .ToList();
+        equipData.modificationNames = unlockData.modificationNames;
 
-        unlockData.modificationNames = mods;
-        equipData.modificationNames  = mods;
+        var permMods = desiredWeapon.permanentModifications
+            .Select(m => m.ModificationName)
+            .ToList();
         unlockData.permanentModificationNames = permMods;
-        equipData.permanentModificationNames  = permMods;
-
-        //equipData.modificationSlots  = modSlots;
-        //unlockData.modificationSlots = modSlots;
+        equipData.permanentModificationNames = permMods;
 
         SaveAltered?.Invoke();
     }
@@ -222,24 +311,17 @@ public class SaveData : ScriptableObject
         weapon.modifications.Clear();
         weapon.permanentModifications.Clear();
 
-        //weapon.modifications = new(data.totalModificationSlots);
+        weapon.modifications = new();
+        weapon.modifications = new(new Modification[weapon.BaseData.modificationSlots]);
 
-        foreach (var name in data.modificationNames)
+        foreach (var entry in data.modificationSlots)
         {
-            var mod = ContentManager.Instance.GetModificationByName(name);
-            if (mod == null) {
-                Debug.LogError("Unable to load modification! Modification ID: " + mod.ModificationName);
-                continue;
-            }
+            var mod = ContentManager.Instance.GetModificationByName(entry.ModificationName);
 
-            /*if (data.modificationSlots == null)
+            if (entry.slot >= 0 && entry.slot <= weapon.BaseData.modificationSlots)
             {
-                weapon.modifications.Add(mod);
-                continue;
+                weapon.modifications[entry.slot] = mod;
             }
-
-            weapon.modifications[data.modificationSlots[mod.ModificationName]] = mod;*/
-            weapon.modifications.Add(mod);
         }
 
         foreach (var name in data.permanentModificationNames)

@@ -128,7 +128,8 @@ public class PlayerCamera : Player.PlayerComponent
 
     public void SlideRotate(Vector3 normal)
     {
-        recoil.z = slideAngle * -Mathf.Sign(Vector3.SignedAngle(CameraForwardNoY, normal.normalized, Vector3.up)) * (1.0f - Mathf.Abs(Vector3.Dot(normal.normalized, CameraForward)));
+        float angle = slideAngle * -Mathf.Sign(Vector3.SignedAngle(CameraForwardNoY, normal.normalized, Vector3.up)) * (1.0f - Mathf.Abs(Vector3.Dot(normal.normalized, CameraForward)));
+        recoil.z    = rb.linearVelocity.magnitude <= 1 ? 0 : angle;
     }
 
     public void ViewTilt()
@@ -145,8 +146,6 @@ public class PlayerCamera : Player.PlayerComponent
 
     public void ViewmodelRecoil()
     {
-        Vector3 rand = Random.insideUnitSphere;
-       // desiredViewmodelRotation *= Quaternion.Euler(-viewmodelRecoil.x, rand.y * viewmodelRecoil.y, rand.z * viewmodelRecoil.z);
         desiredPos -= viewmodelKickbackForce * Vector3.forward;
     }
 

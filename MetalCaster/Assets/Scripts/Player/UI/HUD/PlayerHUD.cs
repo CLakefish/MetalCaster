@@ -39,7 +39,7 @@ public class PlayerHUD : Player.PlayerComponent
             return;
         }
 
-        ammoCount.text = PlayerWeapon.Selected.Weapon.WeaponData.shotCount.ToString();
+        ammoCount.text = PlayerWeapon.Selected.Weapon.AlteredData.shotCount.ToString();
     }
 
     public void AddWeapon(Weapon weapon)

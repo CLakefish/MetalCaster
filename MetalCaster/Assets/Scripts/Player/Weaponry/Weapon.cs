@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 [System.Serializable]
@@ -19,8 +20,10 @@ public class Weapon : MonoBehaviour
     [SerializeField] private Transform menuPos;
     [SerializeField] private Transform menuHolder;
 
-    public PlayerWeaponData WeaponData { get; set; }
-    public Player Player               { get; private set; }
+    public PlayerWeaponData BaseData => baseData;
+    public PlayerWeaponData AlteredData { get; set; }
+
+    public Player Player                { get; private set; }
 
     public Transform MuzzlePos       => muzzlePosition;
     public Transform MenuPos         => menuPos;
@@ -47,37 +50,37 @@ public class Weapon : MonoBehaviour
         Destroy(gameObject);
     }
 
-    public void AddModification(Modification data) {
-        if (modifications.Count >= WeaponData.modificationSlots) return;
+    public void AddModification(Modification data, int index) {
+        if (index < 0 || index >= BaseData.modificationSlots) return;
 
-        modifications.Add(data);
+        modifications[index] = data;
         ReloadData();
 
         GameDataManager.Instance.ActiveSave.SaveWeapon(this);
 
-        WeaponData.shotCount = WeaponData.magazineSize;
+        AlteredData.shotCount = AlteredData.magazineSize;
     }
 
     public void RemoveModification(Modification data) {
         if (!modifications.Contains(data)) return;
 
-        modifications.Remove(data);
+        modifications[modifications.IndexOf(data)] = null;
         ReloadData();
 
         GameDataManager.Instance.ActiveSave.SaveWeapon(this);
 
-        WeaponData.shotCount = WeaponData.magazineSize;
+        AlteredData.shotCount = AlteredData.magazineSize;
     }
 
     private void ReloadData()
     {
-        if (WeaponData != null) Destroy(WeaponData);
+        if (AlteredData != null) Destroy(AlteredData);
 
-        WeaponData = ScriptableObject.CreateInstance<PlayerWeaponData>();
-        WeaponData.Set(baseData);
+        AlteredData = ScriptableObject.CreateInstance<PlayerWeaponData>();
+        AlteredData.Set(baseData);
 
         mods.Clear();
-        mods.AddRange(modifications);
+        mods.AddRange(modifications.Where(x => x != null));
         mods.AddRange(permanentModifications);
 
         foreach (var mod in mods) mod.Modify(this);
@@ -87,25 +90,25 @@ public class Weapon : MonoBehaviour
 
     public void Fire()
     {
-        if (Time.time < WeaponData.fireTime + WeaponData.prevFireTime || WeaponData.shotCount <= 0) return;
+        if (Time.time < AlteredData.fireTime + AlteredData.prevFireTime || AlteredData.shotCount <= 0) return;
 
         if (reloading) {
-            if (WeaponData.shotCount <= 0) return;
+            if (AlteredData.shotCount <= 0) return;
             else StopCoroutine(reloadCoroutine);
         }
 
-        WeaponData.prevFireTime = Time.time;
+        AlteredData.prevFireTime = Time.time;
 
         OnFire?.Invoke();
 
-        Player.PlayerCamera.Recoil(WeaponData.recoil);
+        Player.PlayerCamera.Recoil(AlteredData.recoil);
         Player.PlayerCamera.ViewmodelRecoil();
 
-        for (int i = 0; i < WeaponData.bulletsPerShot; ++i)
+        for (int i = 0; i < AlteredData.bulletsPerShot; ++i)
         {
-            WeaponData.shotCount--;
+            AlteredData.shotCount--;
 
-            if (WeaponData.shotCount < 0)
+            if (AlteredData.shotCount < 0)
             {
                 Reload();
                 return;
@@ -114,15 +117,15 @@ public class Weapon : MonoBehaviour
             Vector3 pos = Player.PlayerCamera.CameraTransform.position;
             Vector3 dir = Player.PlayerCamera.CameraForward.normalized;
 
-            Bullet bullet    = Player.PlayerWeapon.BulletManager.AddBullet(WeaponData, mods);
+            Bullet bullet    = Player.PlayerWeapon.BulletManager.AddBullet(AlteredData, mods);
             bullet.position  = pos;
             bullet.direction = dir;
 
-            switch (WeaponData.type) {
+            switch (AlteredData.type) {
                 case PlayerWeaponData.ProjectileType.Raycast:
 
                     if (Physics.Raycast(pos, dir, out RaycastHit hit, Mathf.Infinity, Player.hittableLayer)) {
-                        if (hit.collider.TryGetComponent(out Health hp)) hp.Damage(WeaponData.damage);
+                        if (hit.collider.TryGetComponent(out Health hp)) hp.Damage(AlteredData.damage);
 
                         foreach (var mod in mods) mod.OnFirstHit(ref hit, ref bullet);
                     }
@@ -147,7 +150,7 @@ public class Weapon : MonoBehaviour
     }
 
     public void CheckReload() {
-        if (WeaponData.shotCount <= 0) Reload();
+        if (AlteredData.shotCount <= 0) Reload();
     }
 
     private void Reload() {
@@ -165,9 +168,9 @@ public class Weapon : MonoBehaviour
 
         foreach (var mod in mods) mod.OnReload();
 
-        yield return new WaitForSeconds(WeaponData.reloadTime);
+        yield return new WaitForSeconds(AlteredData.reloadTime);
 
-        WeaponData.shotCount = WeaponData.magazineSize;
+        AlteredData.shotCount = AlteredData.magazineSize;
         reloading            = false;
         OnReloadEnd?.Invoke();
     }

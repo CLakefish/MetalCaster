@@ -5,6 +5,6 @@ using UnityEngine;
 public class AllBullets : Modification.AlwaysEmpty
 {
     public override void Modify(Weapon context) {
-        context.WeaponData.bulletsPerShot = context.WeaponData.magazineSize;
+        context.AlteredData.bulletsPerShot = context.AlteredData.magazineSize;
     }
 }

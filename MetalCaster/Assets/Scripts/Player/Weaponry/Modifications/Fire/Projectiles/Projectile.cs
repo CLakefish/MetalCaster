@@ -25,9 +25,19 @@ public class Projectile : MonoBehaviour
             bullet.hitObjects.Add(other);
         }
 
-        bullet.position  = rb.position;
-        bullet.normal    = Vector3.up;
-        bullet.direction = rb.linearVelocity.normalized;
+        if (Physics.SphereCast(rb.transform.position, 0.5f, (other.transform.position - rb.transform.position).normalized, out RaycastHit hit, 1, hittableLayer)) {
+            bullet.normal = hit.normal;
+        }
+        else {
+            bullet.normal = Vector3.up;
+        }
+
+        bullet.direction = rb.linearVelocity;
+        bullet.position  = rb.transform.position;
+
+        foreach (var modification in Player.PlayerWeapon.ModificationManager.ActiveModifications) {
+            modification.OnFirstProjectileHit(other, ref bullet);
+        }
 
         OnHit?.Invoke();
         Player.PlayerWeapon.BulletManager.QueueBullet(ref bullet);

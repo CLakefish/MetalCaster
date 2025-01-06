@@ -1,20 +1,22 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ContentManager : MonoBehaviour
+[CreateAssetMenu(menuName = "Content Manager")]
+public class ContentManager : ScriptableObject
 {
-    [SerializeField] private List<Modification> modifiers;
-    [SerializeField] private List<Weapon>             weapons;
+    public static ContentManager Instance { get; private set; }
 
-    private Dictionary<string, Weapon> weaponLookup;
+    [SerializeField] private List<Modification> modifiers;
+    [SerializeField] private List<Weapon>       weapons;
+
+    private Dictionary<string, Weapon>       weaponLookup;
     private Dictionary<string, Modification> modificationLookup;
 
     public List<Modification> Modifiers => modifiers;
+    public List<Weapon>       Weapons   => weapons;
 
-    public static ContentManager Instance;
-
-    private void OnEnable() {
-        if (Instance == null) Instance = this;
+    public void Enable() {
+        Instance = this;
 
         weaponLookup       = new();
         modificationLookup = new();
@@ -40,7 +42,7 @@ public class ContentManager : MonoBehaviour
     public Weapon GetWeaponDataByName(string weaponName)
     {
         weaponLookup.TryGetValue(weaponName, out Weapon foundWeapon);
-        return foundWeapon;
+        return Instantiate(foundWeapon);
     }
 
     public Modification GetModificationByName(string modName)

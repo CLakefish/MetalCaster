@@ -33,7 +33,7 @@ public class ModificationDraggable : Draggable, IPointerEnterHandler, IPointerEx
         base.OnEndDrag(eventData);
 
         if (transform.parent.TryGetComponent(out ModificationSlot slot)) {
-            slot.Menu.PlayerWeapon.Selected.Weapon.AddModification(modification);
+            slot.Menu.PlayerWeapon.Selected.Weapon.AddModification(modification, slot.Slot);
             onDrop?.Invoke();
         }
     }

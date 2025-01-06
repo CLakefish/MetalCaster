@@ -77,7 +77,7 @@ public class Gnome : MonoBehaviour
         hfsm.CheckTransitions();
         hfsm.Update();
 
-        Debug.Log(hfsm.CurrentState);
+        //Debug.Log(hfsm.CurrentState);
     }
 
     private void FixedUpdate()

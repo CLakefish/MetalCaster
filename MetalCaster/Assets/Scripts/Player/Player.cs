@@ -3,31 +3,41 @@ using UnityEngine;
 
 public class Player : MonoBehaviour
 {
-    [Header("References")]
-    [SerializeField] public PlayerController PlayerMovement;
-    [SerializeField] public PlayerCamera     PlayerCamera;
-    [SerializeField] public PlayerInput      PlayerInput;
-    [SerializeField] public PlayerWeapon     PlayerWeapon;
-    [SerializeField] public PlayerHealth     PlayerHealth;
+    public static Player Instance { get; private set; }
 
+    [Header("References")]
+    [SerializeField] private PlayerController playerMovement;
+    [SerializeField] private PlayerCamera     playerCamera;
+    [SerializeField] private PlayerInput      playerInput;
+    [SerializeField] private PlayerWeapon     playerWeapon;
+    [SerializeField] private PlayerHealth     playerHealth;
+                     
     [Header("UI")]
-    [SerializeField] public PlayerHUD PlayerHUD;
-    [SerializeField] public PauseMenu PauseMenu;
+    [SerializeField] private PlayerHUD PlayerHUD;
+    [SerializeField] private PauseMenu PauseMenu;
 
     [Header("Physics")]
     [SerializeField] public Rigidbody rb;
     [SerializeField] public CapsuleCollider capsuleCollider;
     [SerializeField] public LayerMask groundLayer;
     [SerializeField] public LayerMask hittableLayer;
+    [SerializeField] public LayerMask enemyLayer;
 
-    public static Player Instance;
+    public PlayerWeapon PlayerWeapon => playerWeapon;
+    public PlayerCamera PlayerCamera => playerCamera;
 
     private void OnEnable() {
-        if (Instance == null) Instance = this;
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
 
-        PlayerMovement.SetPlayer(this);
-        PlayerCamera.SetPlayer(this);
-        PlayerInput.SetPlayer(this);
+        Instance = this;
+
+        playerMovement.SetPlayer(this);
+        playerCamera.SetPlayer(this);
+        playerInput.SetPlayer(this);
         PlayerWeapon.SetPlayer(this);
         PlayerHUD.SetPlayer(this);
         PauseMenu.SetPlayer(this);
@@ -37,14 +47,14 @@ public class Player : MonoBehaviour
     {
         private Player player;
 
-        public void SetPlayer(Player player)    => this.player = player;
+        public void SetPlayer(Player player) => this.player = player;
 
         protected Player           Player          => player;
-        protected PlayerController PlayerMovement  => player.PlayerMovement;
-        protected PlayerInput      PlayerInput     => player.PlayerInput;
-        protected PlayerCamera     PlayerCamera    => player.PlayerCamera;
+        protected PlayerController PlayerMovement  => player.playerMovement;
+        protected PlayerInput      PlayerInput     => player.playerInput;
+        protected PlayerCamera     PlayerCamera    => player.playerCamera;
         protected PlayerWeapon     PlayerWeapon    => player.PlayerWeapon;
-        protected PlayerHealth     PlayerHealth    => player.PlayerHealth;
+        protected PlayerHealth     PlayerHealth    => player.playerHealth;
         protected PlayerHUD        PlayerHUD       => player.PlayerHUD;
 
 

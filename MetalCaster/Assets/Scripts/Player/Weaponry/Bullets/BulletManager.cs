@@ -13,6 +13,19 @@ public class Bullet
     public int ricochetCount;
 
     public List<Collider> hitObjects;
+
+    public Bullet() { }
+
+    public Bullet(Bullet other)
+    {
+        position      = other.position;
+        direction     = other.direction;
+        normal        = other.normal;
+        modifications = other.modifications;
+        damage        = other.damage;
+        ricochetCount = other.ricochetCount;
+        hitObjects    = other.hitObjects;
+    }
 }
 
 public class BulletManager : PlayerWeapon.PlayerWeaponSystem
