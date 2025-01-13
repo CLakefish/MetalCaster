@@ -1,6 +1,6 @@
 {
     "saveName": "New Save.json",
-    "saveTime": 11094.375,
+    "saveTime": 11098.2001953125,
     "modifications": [
         "Chain Lightning",
         "All Bullets",
@@ -8,7 +8,8 @@
         "Ricochet",
         "Line Rendering",
         "Turret",
-        "Explosive Bullets"
+        "Explosive Bullets",
+        "Better Bullets"
     ],
     "equippedWeapons": [
         {

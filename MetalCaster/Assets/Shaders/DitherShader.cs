@@ -87,8 +87,6 @@ public class DitherShader : MonoBehaviour
 
     private void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
-        Debug.Log("rendered");
-
         if (currentPalette.Count <= 0 || !Enabled)
         {
             Graphics.Blit(source, destination);

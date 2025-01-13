@@ -260,8 +260,6 @@ public class PlayerController : Player.PlayerComponent
         PlayerCollisions.GroundCollisions();
         PlayerCollisions.WallCollisions();
 
-        Debug.Log(PlayerCollisions.GroundCollision);
-
         hfsm.FixedUpdate();
 
         if (!PlayerCollisions.GroundCollision && CurrentState != WallRun) rb.linearVelocity -= new Vector3(0, gravity, 0) * Time.fixedDeltaTime;

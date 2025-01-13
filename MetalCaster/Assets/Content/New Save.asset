@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: New Save
   m_EditorClassIdentifier: 
   saveName: New Save.json
-  saveTime: 11098.2
+  saveTime: 10497.051
   modifications:
   - Chain Lightning
   - All Bullets
@@ -22,63 +22,30 @@ MonoBehaviour:
   - Line Rendering
   - Turret
   - Explosive Bullets
+  - Better Bullets
   equippedWeapons:
   - weaponName: 1
     modificationNames:
-    - Chain Lightning
-    - Bubbles
     - Ricochet
-    permanentModificationNames:
-    - Turret
+    permanentModificationNames: []
     modificationSlots:
     - slot: 0
-      ModificationName: Chain Lightning
-    - slot: 1
-      ModificationName: Bubbles
-    - slot: 2
       ModificationName: Ricochet
   - weaponName: 2
-    modificationNames:
-    - Ricochet
-    - Chain Lightning
+    modificationNames: []
     permanentModificationNames:
     - Line Rendering
-    modificationSlots:
-    - slot: 0
-      ModificationName: Ricochet
-    - slot: 0
-      ModificationName: Ricochet
-    - slot: 1
-      ModificationName: Chain Lightning
-    - slot: 1
-      ModificationName: Chain Lightning
+    modificationSlots: []
   unlockedWeapons:
   - weaponName: 1
     modificationNames:
-    - Chain Lightning
-    - Bubbles
     - Ricochet
-    permanentModificationNames:
-    - Turret
+    permanentModificationNames: []
     modificationSlots:
     - slot: 0
-      ModificationName: Chain Lightning
-    - slot: 1
-      ModificationName: Bubbles
-    - slot: 2
       ModificationName: Ricochet
   - weaponName: 2
-    modificationNames:
-    - Ricochet
-    - Chain Lightning
+    modificationNames: []
     permanentModificationNames:
     - Line Rendering
-    modificationSlots:
-    - slot: 0
-      ModificationName: Ricochet
-    - slot: 0
-      ModificationName: Ricochet
-    - slot: 1
-      ModificationName: Chain Lightning
-    - slot: 1
-      ModificationName: Chain Lightning
+    modificationSlots: []
