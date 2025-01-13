@@ -19,6 +19,12 @@ public class ProjectilePlace : Modification.Queue
     {
         if (hittableLayers != (hittableLayers | (1 << collider.gameObject.layer))) return;
 
+        if (Physics.Raycast(bullet.position - bullet.direction.normalized, bullet.direction.normalized, out RaycastHit hit, 3.0f, hittableLayers))
+        {
+            AddTurret(hit.point, hit.normal, ref bullet);
+            return;
+        }
+
         AddTurret(bullet.position, bullet.normal, ref bullet);
     }
 
@@ -26,8 +32,10 @@ public class ProjectilePlace : Modification.Queue
     {
         if (bullet.hitObjects == null) bullet.hitObjects = new();
 
-        Placeable placeable    = Instantiate(placeablePrefab, pos, Quaternion.identity);
-        placeable.transform.up = normal;
+        Placeable placeable = Instantiate(placeablePrefab, pos, Quaternion.identity);
+        Vector3   bound     = placeable.GetComponent<MeshRenderer>().bounds.size;
+        placeable.transform.up        = normal;
+        placeable.transform.position += normal * (bound.y * 0.5f);
         placeable.ProvideBullet(ref bullet, Player);
     }
 }

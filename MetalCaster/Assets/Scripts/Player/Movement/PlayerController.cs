@@ -6,24 +6,14 @@ using UnityEngine;
 // Concept recommendations and help by Oliver Beebe
 
 // TODO:
-// - Better modification menu rotation (Do Tomorrow)
-// - Save modifications in the slots they were applied in (Do Tomorrow)
-// - Pause Menu (Do Tomorrow if Time)
+// - Fix wall run angle determinant (probably w/the dot)
 // - Weapon Swap Menu (Do Tuesday)
 // - Modifications :)
 // - Enemies :)
-// - 
 
 
 public class PlayerController : Player.PlayerComponent
 {
-    [Header("Collisions")]
-    [SerializeField] private float groundCastDist;
-    [SerializeField] private float fallingCastDist;
-    [SerializeField] private int   wallCastIncrements;
-    [SerializeField] private float wallCastDistance;
-    [SerializeField] private float interpolateNormalSpeed;
-
     [Header("Walking Parameters")]
     [SerializeField] private float moveSpeed;
     [SerializeField] private float crouchSpeed;
@@ -55,7 +45,7 @@ public class PlayerController : Player.PlayerComponent
     [Header("Size Change Parameters")]
     [SerializeField] private float crouchSize;
     [SerializeField] private float standardSize;
-    [SerializeField] private float crouchTime;
+    [SerializeField] public float crouchTime;
 
     [Header("Wall Run Parameters")]
     [SerializeField] private float wallRunSpeed;
@@ -72,20 +62,7 @@ public class PlayerController : Player.PlayerComponent
     [SerializeField] private float wallJumpMinDot;
     [SerializeField] private float wallJumpKickDot;
 
-    private readonly float groundCastRad       = 0.4f;
-    private readonly float interpDeviation     = 10;
-    private readonly float raycastMargin       = 0.1f;
-    private readonly float floorStickThreshold = 0.05f;
-    private readonly float slideDotMin         = -0.25f;
-
-    private bool GroundCollision                { get; set; }
-    private bool SlopeCollision                 { get; set; }
-    private Vector3 GroundNormal                { get; set; }
-    private Vector3 GroundPoint                 { get; set; }
-
-    private bool WallCollision                  { get; set; }
-    private Vector3 WallNormal                  { get; set; }
-
+    private readonly float slideDotMin = -0.25f;
 
     private StateMachine<PlayerController> hfsm;
 
@@ -96,19 +73,6 @@ public class PlayerController : Player.PlayerComponent
     private SlideJumping SlideJump { get; set; }
     private WallRunning WallRun    { get; set; }
     private WallJumping WallJump   { get; set; }
-
-    private float Size {
-        get { 
-            return CapsuleCollider.height; 
-        }
-        set {
-            float start = CapsuleCollider.height;
-            float hD    = value - start;
-
-            CapsuleCollider.height += hD;
-            if (GroundCollision) rb.MovePosition(rb.position + Vector3.up * hD / 2.0f);
-        }
-    }
 
     private bool CanUncrouch {
         get {
@@ -153,11 +117,13 @@ public class PlayerController : Player.PlayerComponent
 
     private bool AllowWallRun {
         get {
-            float angle = Vector3.SignedAngle(WallNormal, ViewPositionNoY, Vector3.up);
-            bool isWall = Vector3.Angle(Vector3.up, WallNormal) >= 89.0f;
+            float angle = Vector3.SignedAngle(PlayerCollisions.WallNormal, ViewPositionNoY, Vector3.up);
+            bool isWall = Vector3.Angle(Vector3.up, PlayerCollisions.WallNormal) >= 89.0f;
             return Mathf.Abs(angle) > wallRunMaxAngle && isWall;
         }
     }
+
+    public bool GroundState => hfsm.CurrentState == Grounded;
 
     private IState CurrentState {
         get {
@@ -178,7 +144,6 @@ public class PlayerController : Player.PlayerComponent
     }
 
     private Vector2 DesiredHorizontalVelocity { get; set; }
-    private Coroutine sizeChange = null;
     private bool slideBoost = true;
 
     private float previousDuration = 0;
@@ -204,46 +169,46 @@ public class PlayerController : Player.PlayerComponent
         hfsm.AddTransitions(new()
         {
             // Grounded transitions
-            new(Grounded, Falling,   () => !GroundCollision),
+            new(Grounded, Falling,   () => !PlayerCollisions.GroundCollision),
             new(Grounded, SlideJump, () => jumpBufferTime > 0 && PreviousState == Sliding),
-            new(Grounded, Jumping,   () => PlayerInput.Jump || jumpBufferTime > 0),
+            new(Grounded, Jumping,   () => PlayerInput.Jump   || jumpBufferTime > 0),
             new(Grounded, Sliding,   () => PlayerInput.Slide),
 
             // Jumping transitions   
             new(Jumping, Falling,    () => rb.linearVelocity.y <= 0 && hfsm.Duration >= minJumpTime),
-            new(Jumping, Grounded,   () => hfsm.Duration >= minJumpTime && GroundCollision),
-            new(Jumping, WallRun,    () => WallCollision && AllowWallRun && hfsm.Duration >= minJumpTime),
+            new(Jumping, Grounded,   () => hfsm.Duration >= minJumpTime && PlayerCollisions.GroundCollision),
+            new(Jumping, WallRun,    () => PlayerCollisions.WallCollision && AllowWallRun && hfsm.Duration >= minJumpTime),
 
             // Falling transitions   
-            new(Falling, Jumping,    () => PlayerInput.Jump && PreviousState == Grounded && hfsm.Duration < coyoteTime),
-            new(Falling, SlideJump,  () => PlayerInput.Jump && PreviousState == Sliding && hfsm.Duration < coyoteTime),
-            new(Falling, WallJump,   () => (PlayerInput.Jump || jumpBufferTime > 0) && WallCollision && !GroundCollision),
-            new(Falling, WallJump,   () => (PlayerInput.Jump || jumpBufferTime > 0) && PreviousState == WallRun && hfsm.Duration < wallJumpCoyoteTime),
+            new(Falling, Jumping,    () => PlayerInput.Jump  && PreviousState == Grounded && hfsm.Duration < coyoteTime),
+            new(Falling, SlideJump,  () => PlayerInput.Jump  && PreviousState == Sliding  && hfsm.Duration < coyoteTime),
+            new(Falling, WallJump,   () => (PlayerInput.Jump || jumpBufferTime > 0)       && PlayerCollisions.WallCollision && !PlayerCollisions.GroundCollision),
+            new(Falling, WallJump,   () => (PlayerInput.Jump || jumpBufferTime > 0)       && PreviousState == WallRun       && hfsm.Duration < wallJumpCoyoteTime),
 
-            new(Falling, Grounded,   () => !PlayerInput.Slide && GroundCollision),
-            new(Falling, Sliding,    () => PlayerInput.Slide  && GroundCollision),
-            new(Falling, WallRun,    () => WallCollision      && !GroundCollision && AllowWallRun),
+            new(Falling, Grounded,   () => !PlayerInput.Slide && PlayerCollisions.GroundCollision && hfsm.Duration > 0.1f),
+            new(Falling, Sliding,    () => PlayerInput.Slide  && PlayerCollisions.GroundCollision),
+            new(Falling, WallRun,    () => PlayerCollisions.WallCollision && !PlayerCollisions.GroundCollision && AllowWallRun),
 
             // Sliding transitions   
-            new(Sliding, SlideJump,  () => (PlayerInput.Jump || jumpBufferTime > 0) && GroundCollision),
-            new(Sliding, Falling,    () => !GroundCollision   && !SlopeCollision),
-            new(Sliding, Grounded,   () => !PlayerInput.Slide && GroundCollision),
+            new(Sliding, SlideJump,  () => (PlayerInput.Jump || jumpBufferTime > 0) && PlayerCollisions.GroundCollision),
+            new(Sliding, Falling,    () => !PlayerCollisions.GroundCollision        && !PlayerCollisions.SlopeCollision),
+            new(Sliding, Grounded,   () => !PlayerInput.Slide                       && PlayerCollisions.GroundCollision),
 
             // Slide jump transitions
             new(SlideJump, Falling,  () => ((!PlayerInput.Slide) || (rb.linearVelocity.y < 0 && hfsm.Duration > 0)) && hfsm.Duration > minJumpTime),
-            new(SlideJump, Grounded, () => !PlayerInput.Slide && GroundCollision && hfsm.Duration >= minJumpTime),
-            new(SlideJump, Sliding,  () => PlayerInput.Slide  && GroundCollision && hfsm.Duration >= minJumpTime),
+            new(SlideJump, Grounded, () => !PlayerInput.Slide && PlayerCollisions.GroundCollision                   && hfsm.Duration >= minJumpTime),
+            new(SlideJump, Sliding,  () => PlayerInput.Slide  && PlayerCollisions.GroundCollision                   && hfsm.Duration >= minJumpTime),
 
             // Wall run transitions
             new(WallRun, WallJump,   () => PlayerInput.Jump || jumpBufferTime > 0),
-            new(WallRun, Falling,    () => !WallCollision   && !GroundCollision),
+            new(WallRun, Falling,    () => !PlayerCollisions.WallCollision   && !PlayerCollisions.GroundCollision),
             new(WallRun, Falling,    () => !AllowWallRun),
-            new(WallRun, Grounded,   () => GroundCollision),
+            new(WallRun, Grounded,   () => PlayerCollisions.GroundCollision),
 
             // Wall jump transitions
             new(WallJump, Falling,   () => hfsm.Duration >= wallJumpTime),
-            new(WallJump, Grounded,  () => GroundCollision && hfsm.Duration >= wallJumpTime),
-            new(WallJump, WallRun,   () => WallCollision   && AllowWallRun && hfsm.Duration >= wallJumpTime),
+            new(WallJump, Grounded,  () => PlayerCollisions.GroundCollision && hfsm.Duration >= wallJumpTime),
+            new(WallJump, WallRun,   () => PlayerCollisions.WallCollision   && AllowWallRun && hfsm.Duration >= wallJumpTime),
 
 #if UNITY_EDITOR
             new(null,     DebugFly,  () => Input.GetKeyDown(KeyCode.F)),
@@ -264,8 +229,7 @@ public class PlayerController : Player.PlayerComponent
 
     private void OnDisable()
     {
-        ResetGroundCollisions();
-        ResetWallCollisions();
+        PlayerCollisions.ResetAllCollisions();
         hfsm.Start(Falling);
     }
 
@@ -276,7 +240,7 @@ public class PlayerController : Player.PlayerComponent
         hfsm.CheckTransitions();
         hfsm.Update();
 
-        ChangeSize(PlayerInput.Slide || !CanUncrouch ? crouchSize : standardSize);
+        PlayerCollisions.ChangeSize(PlayerInput.Slide || !CanUncrouch ? crouchSize : standardSize);
 
         if (PlayerInput.Mouse.Right.Pressed) {
             PlayerHealth.Damage(10);
@@ -293,12 +257,14 @@ public class PlayerController : Player.PlayerComponent
         }
 #endif
 
-        GroundCollisions();
-        WallCollisions();
+        PlayerCollisions.GroundCollisions();
+        PlayerCollisions.WallCollisions();
+
+        Debug.Log(PlayerCollisions.GroundCollision);
 
         hfsm.FixedUpdate();
 
-        if (!GroundCollision && CurrentState != WallRun) rb.linearVelocity -= new Vector3(0, gravity, 0) * Time.fixedDeltaTime;
+        if (!PlayerCollisions.GroundCollision && CurrentState != WallRun) rb.linearVelocity -= new Vector3(0, gravity, 0) * Time.fixedDeltaTime;
     }
 
     private void Move(float moveSpeed, bool maintainMomentum = true)
@@ -315,97 +281,18 @@ public class PlayerController : Player.PlayerComponent
 
         Vector3 setVelocity = new (DesiredHorizontalVelocity.x, rb.linearVelocity.y, DesiredHorizontalVelocity.y);
 
-        if (SlopeCollision && CurrentState == Grounded) {
-            setVelocity = Quaternion.FromToRotation(Vector3.up, GroundNormal) * setVelocity;
+        if (PlayerCollisions.SlopeCollision && CurrentState == Grounded) {
+            setVelocity = Quaternion.FromToRotation(Vector3.up, PlayerCollisions.GroundNormal) * setVelocity;
         }
 
         setVelocity.y = Mathf.Clamp(setVelocity.y, maxFallSpeed, Mathf.Infinity);
         rb.linearVelocity = setVelocity;
     }
 
-    #region Collision_Detection
-    private void GroundCollisions()
-    {
-        float castDist = (CurrentState == Grounded ? groundCastDist : fallingCastDist) * Size / 2.0f;
-
-        if (Physics.SphereCast(rb.transform.position, groundCastRad, Vector3.down, out RaycastHit interpolated, castDist, GroundLayer))
-        {
-            Vector3 dir           = (interpolated.point - rb.transform.position).normalized;
-            Vector3 desiredNormal = interpolated.normal;
-
-            if (Physics.Raycast(rb.transform.position, dir, out RaycastHit nonInterpolated, dir.magnitude + raycastMargin, GroundLayer)) {
-                // FUCKKKKK!!!!
-                if (Vector3.Angle(Vector3.up, nonInterpolated.normal) >= 90) {
-                    desiredNormal = Vector3.up;
-                }
-                else {
-                    float interpAngle    = Vector3.Angle(Vector3.up, interpolated.normal);
-                    float nonInterpAngle = Vector3.Angle(Vector3.up, nonInterpolated.normal);
-
-                    if (interpAngle >= 90 || Mathf.Abs(nonInterpAngle - interpAngle) > interpDeviation) {
-                        desiredNormal = nonInterpolated.normal;
-                    }
-                }
-            }
-
-            float angle     = Vector3.Angle(Vector3.up, desiredNormal);
-            GroundNormal    = Vector3.MoveTowards(GroundNormal, desiredNormal, Time.fixedDeltaTime * interpolateNormalSpeed);
-            GroundPoint     = interpolated.point;
-            GroundCollision = true;
-            SlopeCollision  = angle > 0;
-            return;
-        }
-
-        ResetGroundCollisions();
-    }
-
-    private void WallCollisions()
-    {
-        float P2 = Mathf.PI * 2 / wallCastIncrements;
-
-        Vector3 combined = Vector3.zero;
-
-        for (int i = 0; i < wallCastIncrements; ++i)
-        {
-            Vector3 dir = new Vector3(Mathf.Cos(P2 * i), 0, Mathf.Sin(P2 * i)).normalized;
-
-            if (Physics.Raycast(rb.position, dir, out RaycastHit hit, wallCastDistance, GroundLayer)) {
-                combined += hit.normal;
-            }
-        }
-
-        if (combined == Vector3.zero) {
-            ResetWallCollisions();
-            return;
-        }
-
-        WallCollision = true;
-        WallNormal    = combined.normalized;
-    }
-
-    private void ResetGroundCollisions() => SlopeCollision = GroundCollision = false;
-    private void ResetWallCollisions()   => WallCollision  = false;
-
     public void Launch() {
         hfsm.ChangeState(Falling);
-        ResetGroundCollisions();
-        ResetWallCollisions();
-    }
-
-    #endregion
-
-    private void ChangeSize(float endSize) {
-        if (sizeChange != null) StopCoroutine(sizeChange);
-        sizeChange = StartCoroutine(ChangeSizeCoroutine(endSize));
-    }
-
-    private IEnumerator ChangeSizeCoroutine(float endSize) {
-        while (Mathf.Abs(Size - endSize) > 0.01f) {
-            Size = Mathf.MoveTowards(Size, endSize, Time.fixedDeltaTime * crouchTime);
-            yield return new WaitForFixedUpdate();
-        }
-
-        Size = endSize;
+        PlayerCollisions.ResetAllCollisions();
+        DesiredHorizontalVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.z);
     }
 
     #region Standard_States
@@ -431,10 +318,10 @@ public class PlayerController : Player.PlayerComponent
         }
 
         public override void FixedUpdate() {
-            float halfSize    = context.Size / 2.0f;
-            float yPos        = context.Position.y - halfSize - context.GroundPoint.y;
-            float yCheck      = context.floorStickThreshold;
-            Vector3 targetPos = new(context.Position.x, context.GroundPoint.y + halfSize, context.Position.z);
+            float halfSize    = context.PlayerCollisions.Size / 2.0f;
+            float yPos        = context.Position.y - halfSize - context.PlayerCollisions.GroundPoint.y;
+            float yCheck      = context.PlayerCollisions.floorStickThreshold;
+            Vector3 targetPos = new(context.Position.x, context.PlayerCollisions.GroundPoint.y + halfSize, context.Position.z);
 
             if (yPos > yCheck)
             {
@@ -469,7 +356,7 @@ public class PlayerController : Player.PlayerComponent
         public JumpingState(PlayerController context) : base(context) { }
 
         public override void Enter() {
-            context.ResetGroundCollisions();
+            context.PlayerCollisions.ResetGroundCollisions();
             context.jumpBufferTime = 0;
             context.rb.linearVelocity = new Vector3(context.rb.linearVelocity.x, context.jumpForce, context.rb.linearVelocity.z);
         }
@@ -495,9 +382,9 @@ public class PlayerController : Player.PlayerComponent
             if (context.slideBoost && context.HorizontalVelocity.magnitude <= context.slideForce) {
                 if (context.PlayerInput.IsInputting) context.PlayerCamera.FOVPulse();
 
-                if (context.SlopeCollision) {
+                if (context.PlayerCollisions.SlopeCollision) {
                     Vector3 dir = (context.ViewPositionNoY * context.slideForce) + (context.gravity * Time.fixedDeltaTime * Vector3.down);
-                    momentum    = Quaternion.FromToRotation(Vector3.up, context.GroundNormal) * dir;
+                    momentum    = Quaternion.FromToRotation(Vector3.up, context.PlayerCollisions.GroundNormal) * dir;
                 }
                 else {
                     momentum = context.ViewPositionNoY * context.slideForce;
@@ -519,10 +406,10 @@ public class PlayerController : Player.PlayerComponent
             Vector3 desiredVelocity;
 
             // Gaining momentum
-            if (context.SlopeCollision) {
+            if (context.PlayerCollisions.SlopeCollision) {
                 // Get the gravity, angle, and current momentumDirection
-                Vector3 slopeGravity  = Vector3.ProjectOnPlane(Vector3.down * context.gravity, context.GroundNormal);
-                float normalizedAngle = Vector3.Angle(Vector3.up, context.GroundNormal) / 90.0f;
+                Vector3 slopeGravity  = Vector3.ProjectOnPlane(Vector3.down * context.gravity, context.PlayerCollisions.GroundNormal);
+                float normalizedAngle = Vector3.Angle(Vector3.up, context.PlayerCollisions.GroundNormal) / 90.0f;
                 Vector3 adjusted      = slopeGravity * (1.0f + normalizedAngle);
                 desiredVelocity       = momentum + adjusted;
             }
@@ -539,12 +426,12 @@ public class PlayerController : Player.PlayerComponent
             momentum = slideInterpolated;
             
             if (context.ViewPositionNoY != Vector3.zero) {
-                Vector3 desiredDirection = Vector3.ProjectOnPlane(context.ViewPositionNoY, context.GroundNormal).normalized;
-                Vector3 slopeDirection   = Vector3.ProjectOnPlane(Vector3.down, context.GroundNormal).normalized;
+                Vector3 desiredDirection = Vector3.ProjectOnPlane(context.ViewPositionNoY, context.PlayerCollisions.GroundNormal).normalized;
+                Vector3 slopeDirection   = Vector3.ProjectOnPlane(Vector3.down, context.PlayerCollisions.GroundNormal).normalized;
 
                 if (Vector3.Dot(desiredDirection, slopeDirection) >= context.slideDotMin) {
-                    Vector3 currentMomentum = context.SlopeCollision 
-                        ? Vector3.ProjectOnPlane(momentum, context.GroundNormal).normalized
+                    Vector3 currentMomentum = context.PlayerCollisions.SlopeCollision 
+                        ? Vector3.ProjectOnPlane(momentum, context.PlayerCollisions.GroundNormal).normalized
                         : momentum;
 
                     Quaternion rotation     = Quaternion.FromToRotation(currentMomentum, desiredDirection);
@@ -553,8 +440,8 @@ public class PlayerController : Player.PlayerComponent
 
                     momentum = interpolated * momentum;
 
-                    if (Vector3.Dot(momentum, slopeDirection) <= 0 && context.SlopeCollision) {
-                        momentum = Vector3.ProjectOnPlane(momentum, context.GroundNormal);
+                    if (Vector3.Dot(momentum, slopeDirection) <= 0 && context.PlayerCollisions.SlopeCollision) {
+                        momentum = Vector3.ProjectOnPlane(momentum, context.PlayerCollisions.GroundNormal);
                     }
                 }
             }
@@ -573,7 +460,7 @@ public class PlayerController : Player.PlayerComponent
         public SlideJumping(PlayerController context) : base(context) { }
 
         public override void Enter() {
-            context.ResetGroundCollisions();
+            context.PlayerCollisions.ResetGroundCollisions();
 
             context.jumpBufferTime    = 0;
             context.slideBoost        = false;
@@ -607,16 +494,16 @@ public class PlayerController : Player.PlayerComponent
             float tempY  = Mathf.Max(context.rb.linearVelocity.y, 0);
 
             if (temp.magnitude == 0) {
-                temp = context.WallNormal;
+                temp = context.PlayerCollisions.WallNormal;
             }
             else {
-                temp = Quaternion.FromToRotation(Vector3.up, context.WallNormal) * temp;
+                temp = Quaternion.FromToRotation(Vector3.up, context.PlayerCollisions.WallNormal) * temp;
             }
 
             context.rb.linearVelocity         = new Vector3(temp.x, tempY, temp.z);
             context.DesiredHorizontalVelocity = new Vector2(context.HorizontalVelocity.x, context.HorizontalVelocity.z);
 
-            prevForward = context.WallNormal;
+            prevForward = context.PlayerCollisions.WallNormal;
             targetY     = context.rb.transform.localEulerAngles.y;
             rotateVel   = 0;
         }
@@ -627,8 +514,8 @@ public class PlayerController : Player.PlayerComponent
 
                 context.rb.MoveRotation(Quaternion.Euler(new Vector3(0, y, 0)));
 
-                if (prevForward != context.WallNormal) {
-                    float angle = Vector3.SignedAngle(prevForward, context.WallNormal, Vector3.up);
+                if (prevForward != context.PlayerCollisions.WallNormal) {
+                    float angle = Vector3.SignedAngle(prevForward, context.PlayerCollisions.WallNormal, Vector3.up);
                     targetY    += angle;
                 }
             }
@@ -636,9 +523,9 @@ public class PlayerController : Player.PlayerComponent
                 targetY = context.rb.transform.localEulerAngles.y;
             }
 
-            prevForward = context.WallNormal;
+            prevForward = context.PlayerCollisions.WallNormal;
 
-            context.PlayerCamera.WallRunRotate(context.WallNormal);
+            context.PlayerCamera.WallRunRotate(context.PlayerCollisions.WallNormal);
         }
 
         public override void FixedUpdate() {
@@ -646,7 +533,7 @@ public class PlayerController : Player.PlayerComponent
 
             // Ensuring if you are not trying to stick to a wall with a large difference in the angle, it wont attempt to! Specifically for corners
             // May cause a few things here and there, will need to stress test to confirm
-            float angle = Mathf.Abs(Vector3.SignedAngle(context.WallNormal, context.PlayerCamera.CameraForward, Vector3.up));
+            float angle = Mathf.Abs(Vector3.SignedAngle(context.PlayerCollisions.WallNormal, context.PlayerCamera.CameraForward, Vector3.up));
 
             if (angle <= context.wallRunAngleChangeMax) return;
 
@@ -666,7 +553,7 @@ public class PlayerController : Player.PlayerComponent
             if (context.HorizontalVelocity.magnitude <= Mathf.Epsilon) dir = context.PlayerCamera.CameraForwardNoY;
             else                                                       dir = context.HorizontalVelocity;
 
-            Vector3 projected = Vector3.ProjectOnPlane(dir, context.WallNormal).normalized;
+            Vector3 projected = Vector3.ProjectOnPlane(dir, context.PlayerCollisions.WallNormal).normalized;
             return projected;
         }
     }
@@ -677,12 +564,12 @@ public class PlayerController : Player.PlayerComponent
 
         public override void Enter() {
             Vector3 dir = context.PlayerCamera.CameraForwardNoY;
-            float dot   = Vector3.Dot(dir, context.WallNormal);
+            float dot   = Vector3.Dot(dir, context.PlayerCollisions.WallNormal);
 
-            if (context.WallCollision)
+            if (context.PlayerCollisions.WallCollision)
             {
-                if (dot <= context.wallJumpMinDot)  dir = (context.PlayerCamera.CameraForwardNoY + context.WallNormal).normalized;
-                if (dot <= context.wallJumpKickDot) dir = context.WallNormal;
+                if (dot <= context.wallJumpMinDot)  dir = (context.PlayerCamera.CameraForwardNoY + context.PlayerCollisions.WallNormal).normalized;
+                if (dot <= context.wallJumpKickDot) dir = context.PlayerCollisions.WallNormal;
             }
 
             Vector3 vel = Quaternion.FromToRotation(context.rb.linearVelocity.normalized, dir) * context.rb.linearVelocity.normalized;

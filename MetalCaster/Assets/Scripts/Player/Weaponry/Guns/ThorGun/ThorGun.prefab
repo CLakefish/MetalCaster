@@ -590,8 +590,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   modifications: []
-  permanentModifications:
-  - {fileID: 11400000, guid: c2c0bf20e825866409d2ea76a5e27dac, type: 2}
+  permanentModifications: []
   baseData: {fileID: 11400000, guid: 817d519c4a7620642a33bdc86781ff04, type: 2}
   weaponName: 1
   muzzlePosition: {fileID: 5012506610871954291}

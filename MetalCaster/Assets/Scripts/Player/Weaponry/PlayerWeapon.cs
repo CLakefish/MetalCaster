@@ -92,7 +92,7 @@ public class PlayerWeapon : Player.PlayerComponent
     {
         if (Selected.Viewmodel != null)
         {
-            ModificationManager.MarkModifications(GetModifications(Selected.Weapon));
+            //ModificationManager.MarkModifications(GetModifications(Selected.Weapon));
             Selected.Weapon.UnEquip();
             Destroy(Selected.Viewmodel);
         }
@@ -189,22 +189,8 @@ public class PlayerWeapon : Player.PlayerComponent
             }
         }
 
-        var mods = GetModifications(weaponToRemove);
         PlayerHUD.RemoveWeapon(weaponToRemove);
-
-        foreach (var weapon in equippedWeapons) {
-            if (weapon.WeaponName == weaponToRemove.WeaponName) continue;
-
-            foreach (var mod in weapon.modifications) {
-                if (mods.Contains(mod)) mods.Remove(mod);
-            }
-
-            foreach (var mod in weapon.permanentModifications) {
-                if (mods.Contains(mod)) mods.Remove(mod);
-            }
-        }
-
-        ModificationManager.MarkModifications(mods);
+        ModificationManager.MarkModifications(GetModifications(weaponToRemove));
 
         return true;
     }

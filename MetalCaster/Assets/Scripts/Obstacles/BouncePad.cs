@@ -13,15 +13,15 @@ public class BouncePad : MonoBehaviour
     {
         if (other.attachedRigidbody == null) return;
 
-        Vector3 vel = other.attachedRigidbody.linearVelocity;
-        if (vel.x < force.x) vel.x = force.x;
-        if (vel.z < force.z) vel.z = force.z;
+        Vector3 vel = other.attachedRigidbody.linearVelocity + force;
         vel.y = force.y;
 
         other.attachedRigidbody.linearVelocity = vel;
 
-        PlayerController controller = other.gameObject.GetComponentInParent<PlayerController>();
-        if (controller != null) controller.Launch();
+        if (other.CompareTag("Player"))
+        {
+            Player.Instance.PlayerMovement.Launch();
+        }
     }
 
     private void OnDrawGizmos()

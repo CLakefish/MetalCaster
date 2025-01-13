@@ -87,6 +87,8 @@ public class DitherShader : MonoBehaviour
 
     private void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
+        Debug.Log("rendered");
+
         if (currentPalette.Count <= 0 || !Enabled)
         {
             Graphics.Blit(source, destination);
@@ -143,6 +145,9 @@ public class DitherShader : MonoBehaviour
 
         colorBuffer.SetData(colors);
         spread = paletteReference.ditherValue;
+
+        if (ditherMaterial == null) return;
+
         ditherMaterial.SetBuffer("_ColorPalette", colorBuffer);
         ditherMaterial.SetFloat("_NumLevels", colorCount);
     }

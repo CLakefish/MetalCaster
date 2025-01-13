@@ -80,6 +80,9 @@ public class GameDataManager : MonoBehaviour
         if (File.Exists(FilePath)) {
             string fileContents = File.ReadAllText(FilePath);
             JsonUtility.FromJsonOverwrite(fileContents, saveData);
+
+            ActiveSave.RecheckSave();
+
             return true;
         }
 

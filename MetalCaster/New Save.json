@@ -1,0 +1,123 @@
+{
+    "saveName": "New Save.json",
+    "saveTime": 11094.375,
+    "modifications": [
+        "Chain Lightning",
+        "All Bullets",
+        "Bubbles",
+        "Ricochet",
+        "Line Rendering",
+        "Turret",
+        "Explosive Bullets"
+    ],
+    "equippedWeapons": [
+        {
+            "weaponName": "1",
+            "modificationNames": [
+                "Chain Lightning",
+                "Bubbles",
+                "Ricochet"
+            ],
+            "permanentModificationNames": [
+                "Turret"
+            ],
+            "modificationSlots": [
+                {
+                    "slot": 0,
+                    "ModificationName": "Chain Lightning"
+                },
+                {
+                    "slot": 1,
+                    "ModificationName": "Bubbles"
+                },
+                {
+                    "slot": 2,
+                    "ModificationName": "Ricochet"
+                }
+            ]
+        },
+        {
+            "weaponName": "2",
+            "modificationNames": [
+                "Ricochet",
+                "Chain Lightning"
+            ],
+            "permanentModificationNames": [
+                "Line Rendering"
+            ],
+            "modificationSlots": [
+                {
+                    "slot": 0,
+                    "ModificationName": "Ricochet"
+                },
+                {
+                    "slot": 0,
+                    "ModificationName": "Ricochet"
+                },
+                {
+                    "slot": 1,
+                    "ModificationName": "Chain Lightning"
+                },
+                {
+                    "slot": 1,
+                    "ModificationName": "Chain Lightning"
+                }
+            ]
+        }
+    ],
+    "unlockedWeapons": [
+        {
+            "weaponName": "1",
+            "modificationNames": [
+                "Chain Lightning",
+                "Bubbles",
+                "Ricochet"
+            ],
+            "permanentModificationNames": [
+                "Turret"
+            ],
+            "modificationSlots": [
+                {
+                    "slot": 0,
+                    "ModificationName": "Chain Lightning"
+                },
+                {
+                    "slot": 1,
+                    "ModificationName": "Bubbles"
+                },
+                {
+                    "slot": 2,
+                    "ModificationName": "Ricochet"
+                }
+            ]
+        },
+        {
+            "weaponName": "2",
+            "modificationNames": [
+                "Ricochet",
+                "Chain Lightning"
+            ],
+            "permanentModificationNames": [
+                "Line Rendering"
+            ],
+            "modificationSlots": [
+                {
+                    "slot": 0,
+                    "ModificationName": "Ricochet"
+                },
+                {
+                    "slot": 0,
+                    "ModificationName": "Ricochet"
+                },
+                {
+                    "slot": 1,
+                    "ModificationName": "Chain Lightning"
+                },
+                {
+                    "slot": 1,
+                    "ModificationName": "Chain Lightning"
+                }
+            ]
+        }
+    ]
+}

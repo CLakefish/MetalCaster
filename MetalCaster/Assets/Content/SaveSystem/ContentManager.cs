@@ -30,21 +30,22 @@ public class ContentManager : ScriptableObject
         }
     }
 
-    public Weapon GetWeaponDataFromWeapon(Weapon weapon)
-    {
-        foreach (var data in weapons) {
-            if (data.WeaponName == weapon.WeaponName) return weaponLookup[data.WeaponName];
-        }
-
-        return null;
-    }
-
+    /// <summary>
+    /// Returns the weapon from a given name. It IS instantiated
+    /// </summary>
+    /// <param name="weaponName"></param>
+    /// <returns></returns>
     public Weapon GetWeaponDataByName(string weaponName)
     {
         weaponLookup.TryGetValue(weaponName, out Weapon foundWeapon);
         return Instantiate(foundWeapon);
     }
 
+    /// <summary>
+    /// Returns the modification scriptable object. It is NOT instantiated. 
+    /// </summary>
+    /// <param name="modName"></param>
+    /// <returns></returns>
     public Modification GetModificationByName(string modName)
     {
         modificationLookup.TryGetValue(modName, out Modification foundMod);

@@ -39,8 +39,6 @@ public class Ricochet : Modification.Queue
 
             Vector3 reflected = Vector3.Reflect(bullet.direction, bullet.normal);
 
-            Debug.DrawRay(bullet.position, reflected * 5, Color.green, 100);
-
             if (Physics.Raycast(bullet.position, reflected, out RaycastHit hit, Mathf.Infinity, ricochetLayers))
             {
                 InstantiateLine(bullet.position, hit.point);

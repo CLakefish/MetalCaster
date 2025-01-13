@@ -102,7 +102,7 @@ public class SaveData : ScriptableObject
 
     #region Statistic Management
     public string SaveName => saveName;
-    public float SaveTime  => saveTime;
+    public float  SaveTime => saveTime;
 
     public void SetSaveName(string name)  => saveName = name;
     public void IncrementTime(float time) => saveTime += time;
@@ -120,6 +120,7 @@ public class SaveData : ScriptableObject
         if (modification == null) return;
         if (modifications.Contains(modification.ModificationName)) return;
 
+        // Unlocks the modification and saves it
         modifications.Add(modification.ModificationName);
         SaveAltered?.Invoke();
     }
@@ -137,13 +138,14 @@ public class SaveData : ScriptableObject
             return;
         }
 
+        // If you already have the weapon unlocked, no need to re-add it
         if (unlockedWeapons.Any(w => w.weaponName == desiredWeapon.WeaponName))
         {
-            WeaponSaveData unlockedData = unlockedWeapons.Find(w => w.weaponName == desiredWeapon.WeaponName);
-            unlockedData.permanentModificationNames = desiredWeapon.permanentModifications.ConvertAll(mod => mod.ModificationName);
             return;
         }
 
+        // Create the data, save it.
+        // By default it will NOT be equipped!
         WeaponSaveData data = new()
         {
             weaponName                 = desiredWeapon.WeaponName,
@@ -171,6 +173,9 @@ public class SaveData : ScriptableObject
 
     #endregion
 
+    /// <summary>
+    /// Rechecks save files to alter discrepancies with permanent modifications and other info
+    /// </summary>
     public void RecheckSave() {
         // Permanent Modifications
         foreach (var weapon in GameDataManager.Instance.ContentManager.Weapons) {
@@ -186,6 +191,11 @@ public class SaveData : ScriptableObject
 
     #region Weapon Equipping
 
+    /// <summary>
+    /// With a given weapon, if the weapon is not unlocked it will not equip. If the weapon is unlocked it will be equipped so long as its not a duplicate
+    /// </summary>
+    /// <param name="desiredWeapon"></param>
+    /// <returns></returns>
     public bool EquipWeapon(Weapon desiredWeapon)
     {
         if (desiredWeapon == null)
@@ -212,6 +222,10 @@ public class SaveData : ScriptableObject
         return true;
     }
 
+    /// <summary>
+    /// With a given weapon, if the weapon is equipped it will be removed from ONLY the equipped list
+    /// </summary>
+    /// <param name="desiredWeapon"></param>
     public void UnEquipWeapon(Weapon desiredWeapon)
     {
         if (desiredWeapon == null)
@@ -233,6 +247,10 @@ public class SaveData : ScriptableObject
 
     #endregion
 
+    /// <summary>
+    /// For a given weapon, save the data provided to both unlocked and equipped, saving the slots of the equipped modifications 
+    /// </summary>
+    /// <param name="desiredWeapon"></param>
     public void SaveWeapon(Weapon desiredWeapon)
     {
         if (desiredWeapon == null) return;
@@ -246,9 +264,11 @@ public class SaveData : ScriptableObject
             return;
         }
 
+        // Why clear it? Are you oupid :skull:
         unlockData.modificationSlots.Clear();
         equipData.modificationSlots.Clear();
 
+        // Saving modifications, its a list of a set size initialized w/null by default, so theres no need to push it back.
         for (int i = 0; i < desiredWeapon.modifications.Count; i++)
         {
             var mod = desiredWeapon.modifications[i];
@@ -264,6 +284,8 @@ public class SaveData : ScriptableObject
             equipData.modificationSlots.Add(slot);
         }
 
+        // Saving the permanent and customizable modifications via System.Linq (ty system.linq :pray:)
+
         unlockData.modificationNames = desiredWeapon.modifications
             .Where(m => m != null)
             .Select(m => m.ModificationName)
@@ -278,7 +300,11 @@ public class SaveData : ScriptableObject
 
         SaveAltered?.Invoke();
     }
-
+    
+    /// <summary>
+    /// Returns a list of all weapons currently equipped
+    /// </summary>
+    /// <returns></returns>
     public List<Weapon> GetEquippedWeapons()
     {
         List<Weapon> weapons = new();
@@ -292,11 +318,32 @@ public class SaveData : ScriptableObject
         return weapons;
     }
 
+    /// <summary>
+    /// Returns a weapon with its data reloaded (i.e. mods saved)
+    /// </summary>
+    /// <param name="data"></param>
+    /// <returns></returns>
     public Weapon ReloadWeaponData(Weapon data)
     {
         return InstantiateWeapon(equippedWeapons.Find(w => w.weaponName == data.WeaponName));
     }
 
+    /// <summary>
+    /// Returns a weapon with a given name
+    /// </summary>
+    /// <param name="weaponName"></param>
+    /// <returns></returns>
+    public Weapon GetWeaponByName(string weaponName)
+    {
+        var data = unlockedWeapons.Find(w => w.weaponName == weaponName);
+        return InstantiateWeapon(data);
+    }
+
+    /// <summary>
+    /// Instantiates a new weapon with a given name and applies all modifications, then returns it
+    /// </summary>
+    /// <param name="data"></param>
+    /// <returns></returns>
     private Weapon InstantiateWeapon(WeaponSaveData data)
     {
         if (data == null) return null;
@@ -337,11 +384,5 @@ public class SaveData : ScriptableObject
         }
 
         return weapon;
-    }
-
-    public Weapon GetWeaponByName(string weaponName)
-    {
-        var data = unlockedWeapons.Find(w => w.weaponName == weaponName);
-        return InstantiateWeapon(data);
     }
 }

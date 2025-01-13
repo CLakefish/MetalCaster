@@ -17,6 +17,7 @@ public class Player : MonoBehaviour
     [SerializeField] private PauseMenu PauseMenu;
 
     [Header("Physics")]
+    [SerializeField] private PlayerCollisions playerCollisions;
     [SerializeField] public Rigidbody rb;
     [SerializeField] public CapsuleCollider capsuleCollider;
     [SerializeField] public LayerMask groundLayer;
@@ -25,8 +26,11 @@ public class Player : MonoBehaviour
 
     public PlayerWeapon PlayerWeapon => playerWeapon;
     public PlayerCamera PlayerCamera => playerCamera;
+    public PlayerInput PlayerInput   => playerInput;
+    public PlayerController PlayerMovement => playerMovement;
 
-    private void OnEnable() {
+    private void Awake()
+    {
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -34,7 +38,10 @@ public class Player : MonoBehaviour
         }
 
         Instance = this;
+    }
 
+    private void OnEnable() {
+        playerCollisions.SetPlayer(this);
         playerMovement.SetPlayer(this);
         playerCamera.SetPlayer(this);
         playerInput.SetPlayer(this);
@@ -57,6 +64,8 @@ public class Player : MonoBehaviour
         protected PlayerHealth     PlayerHealth    => player.playerHealth;
         protected PlayerHUD        PlayerHUD       => player.PlayerHUD;
 
+
+        protected PlayerCollisions PlayerCollisions => player.playerCollisions;
 
         protected Rigidbody rb                    => player.rb;
         protected CapsuleCollider CapsuleCollider => player.capsuleCollider;

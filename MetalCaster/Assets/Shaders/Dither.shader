@@ -61,7 +61,7 @@ Shader "Hidden/Dither" {
             }
             ENDCG
         }
-            /*
+            
         // Palette swapping pass
         Pass {
             CGPROGRAM
@@ -74,22 +74,26 @@ Shader "Hidden/Dither" {
 
             fixed4 fp(v2f i) : SV_Target {
 
-                float4 col           = _MainTex.Sample(point_clamp_sampler, i.uv);
+                float4 col = _MainTex.Sample(point_clamp_sampler, i.uv);
+                float4 color = float4(0, 0, 0, 1);
+                float dist = 1000;
 
-                // Convert rgb to grayscale
-                float greyscale      = dot(col.rgb, float3(0.299f, 0.587f, 0.114f));
-                int totalSize        = _NumLevels - 1;
+                for (int i = 0; i < _NumLevels; ++i)
+                {
+                    float4 paletteColor = _ColorPalette[i];
+                    float testDist = distance(col.rgb, paletteColor.rgb);
 
-                // Quantize values
-                float quantizedValue = floor(greyscale * totalSize + 0.5) / totalSize;
+                    if (testDist < dist)
+                    {
+                        dist = testDist;
+                        color = paletteColor;
+                    }
+                }
 
-                // Get index based on greyscale value
-                int index            = int(quantizedValue * totalSize);
-
-                return _ColorPalette[clamp(index, 0, totalSize)];
+                return float4(color.rgb, col.a);
             }
             ENDCG
-        }*/
+        }
 
         // Final pass
         Pass {
